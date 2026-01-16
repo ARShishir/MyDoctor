@@ -1,21 +1,16 @@
-// user_dashboard_screen.dart
 import 'package:flutter/material.dart';
 
 import '../../../../core/constants/app_dimensions.dart';
 import '../widgets/user_header.dart';
-import '../widgets/medicine_reminder_card.dart';
 
-// নিজের ফোল্ডার স্ট্রাকচার অনুযায়ী পাথ ঠিক করে নাও
 import 'medical_documents_screen.dart';
-
-import 'medicine_schedule_screen.dart';  
-
+import 'medicine_schedule_screen.dart';
 import 'hospital_services_screen.dart';
 import 'local_pharmacy.dart';
-// যদি ড্যাশবোর্ড অ্যাকশন কার্ড আলাদা ফাইলে থাকে তাহলে এটাও ইমপোর্ট করো
-// import '../widgets/dashboard_action_card.dart';
-
-// যদি আলাদা ফাইলে না রাখতে চাও তাহলে নিচের ক্লাসটা এখানেই রাখতে পারো
+import 'notification.dart';
+/// ===============================
+/// DASHBOARD ACTION CARD
+/// ===============================
 class DashboardActionCard extends StatelessWidget {
   final String title;
   final String subtitle;
@@ -47,11 +42,7 @@ class DashboardActionCard extends StatelessWidget {
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Icon(
-              icon,
-              size: 40,
-              color: color,
-            ),
+            Icon(icon, size: 40, color: color),
             const SizedBox(height: 12),
             Text(
               title,
@@ -77,8 +68,20 @@ class DashboardActionCard extends StatelessWidget {
   }
 }
 
-class UserDashboardScreen extends StatelessWidget {
+
+
+/// ===============================
+/// USER DASHBOARD SCREEN
+/// ===============================
+class UserDashboardScreen extends StatefulWidget {
   const UserDashboardScreen({super.key});
+
+  @override
+  State<UserDashboardScreen> createState() => _UserDashboardScreenState();
+}
+
+class _UserDashboardScreenState extends State<UserDashboardScreen> {
+  int _currentIndex = 0;
 
   @override
   Widget build(BuildContext context) {
@@ -87,7 +90,7 @@ class UserDashboardScreen extends StatelessWidget {
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('আমার ড্যাশবোর্ড'),
+        title: const Text('My Doctors'),
         centerTitle: true,
         elevation: 0,
         backgroundColor: colorScheme.surface,
@@ -98,30 +101,37 @@ class UserDashboardScreen extends StatelessWidget {
               label: const Text('3'),
               child: const Icon(Icons.notifications_outlined),
             ),
-            onPressed: () {},
+            onPressed: () {
+              Navigator.of(context).pushAndRemoveUntil(
+                MaterialPageRoute(builder: (_) => const NotificationScreen()),
+                (route) => false,
+              );
+            },
           ),
+
           const SizedBox(width: 8),
         ],
       ),
 
+      /// ===============================
+      /// BODY (UNCHANGED)
+      /// ===============================
       body: RefreshIndicator(
         onRefresh: () async {
           await Future.delayed(const Duration(milliseconds: 1200));
-          // পরে এখানে আসল রিফ্রেশ লজিক আসবে
         },
         child: CustomScrollView(
           slivers: [
             SliverToBoxAdapter(
               child: Padding(
-                padding: const EdgeInsets.all(AppDimensions.paddingMedium),
+                padding:
+                    const EdgeInsets.all(AppDimensions.paddingMedium),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    // হেডার
                     const UserHeader(),
                     const SizedBox(height: 32),
 
-                    // দ্রুত সেবা সেকশন
                     Text(
                       'দ্রুত সেবা',
                       style: theme.textTheme.titleLarge?.copyWith(
@@ -134,7 +144,8 @@ class UserDashboardScreen extends StatelessWidget {
                     GridView.count(
                       crossAxisCount: 2,
                       shrinkWrap: true,
-                      physics: const NeverScrollableScrollPhysics(),
+                      physics:
+                          const NeverScrollableScrollPhysics(),
                       mainAxisSpacing: 16,
                       crossAxisSpacing: 16,
                       childAspectRatio: 1.05,
@@ -142,13 +153,15 @@ class UserDashboardScreen extends StatelessWidget {
                         DashboardActionCard(
                           title: 'মেডিকেল ডকুমেন্ট',
                           subtitle: 'রিপোর্ট, প্রেসক্রিপশন',
-                          icon: Icons.medical_information_outlined,
+                          icon:
+                              Icons.medical_information_outlined,
                           color: Colors.blue,
                           onTap: () {
                             Navigator.push(
                               context,
                               MaterialPageRoute(
-                                builder: (_) => const MedicalDocumentsScreen(),
+                                builder: (_) =>
+                                    const MedicalDocumentsScreen(),
                               ),
                             );
                           },
@@ -158,12 +171,12 @@ class UserDashboardScreen extends StatelessWidget {
                           subtitle: 'সকল ঔষধের তালিকা',
                           icon: Icons.receipt_long_outlined,
                           color: Colors.teal,
-                          
                           onTap: () {
                             Navigator.push(
                               context,
                               MaterialPageRoute(
-                                builder: (_) => const MedicineScheduleScreen(),
+                                builder: (_) =>
+                                    const MedicineScheduleScreen(),
                               ),
                             );
                           },
@@ -171,27 +184,33 @@ class UserDashboardScreen extends StatelessWidget {
                         DashboardActionCard(
                           title: 'কাছের হাসপাতাল',
                           subtitle: 'লোকেশন অনুযায়ী',
-                          icon: Icons.local_hospital_outlined,
+                          icon:
+                              Icons.local_hospital_outlined,
                           color: Colors.redAccent,
                           onTap: () {
                             Navigator.push(
                               context,
                               MaterialPageRoute(
-                                builder: (_) => const NearbyServicesScreen(),
+                                builder: (_) =>
+                                    const NearbyServicesScreen(),
                               ),
                             );
                           },
                         ),
+                       
+
                         DashboardActionCard(
                           title: 'ফার্মেসি',
                           subtitle: 'ঔষধ খুঁজুন',
-                          icon: Icons.local_pharmacy_outlined,
+                          icon:
+                              Icons.local_pharmacy_outlined,
                           color: Colors.deepPurple,
                           onTap: () {
                             Navigator.push(
                               context,
                               MaterialPageRoute(
-                                builder: (_) => const LocalPharmacyScreen(),
+                                builder: (_) =>
+                                    const LocalPharmacyScreen(),
                               ),
                             );
                           },
@@ -201,27 +220,32 @@ class UserDashboardScreen extends StatelessWidget {
 
                     const SizedBox(height: 32),
 
-                    // আজকের ঔষধের সময়
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      crossAxisAlignment: CrossAxisAlignment.center,
-                      children: [
-                        Text(
-                          'আজকের ঔষধের সময়',
-                          style: theme.textTheme.titleLarge?.copyWith(
-                            fontWeight: FontWeight.w700,
-                          ),
+                 TextButton(
+                    onPressed: () {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (_) => const MedicineScheduleScreen(),
                         ),
-                        TextButton.icon(
-                          onPressed: () {},
-                          icon: const Icon(Icons.arrow_forward, size: 18),
-                          label: const Text('সব দেখুন'),
-                        ),
+                      );
+                    },
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: const [
+                        Text('সব দেখুন'),
+                        SizedBox(width: 4),
+                        Icon(Icons.arrow_forward, size: 18),
                       ],
                     ),
-                    const SizedBox(height: 12),
+                  ),
 
-                    const MedicineReminderCard(),
+                  const SizedBox(height: 12),
+
+
+                  const SizedBox(height: 40),
+
+
+                    const SizedBox(height: 12),
 
                     const SizedBox(height: 40),
                   ],
@@ -232,15 +256,75 @@ class UserDashboardScreen extends StatelessWidget {
         ),
       ),
 
+      /// ===============================
+      /// FLOATING ACTION BUTTON
+      /// ===============================
       floatingActionButton: FloatingActionButton.extended(
         heroTag: 'add_medicine',
         backgroundColor: colorScheme.primary,
         foregroundColor: colorScheme.onPrimary,
         icon: const Icon(Icons.add),
         label: const Text('নতুন ঔষধ'),
-        onPressed: () {
-          // নতুন মেডিসিন যোগ করার স্ক্রিন
+        onPressed: () {},
+      ),
+
+      /// ===============================
+      /// BOTTOM NAVIGATION BAR (NEW)
+      /// ===============================
+      bottomNavigationBar: BottomNavigationBar(
+        currentIndex: _currentIndex,
+        type: BottomNavigationBarType.fixed,
+        selectedItemColor: colorScheme.primary,
+        onTap: (index) {
+          setState(() => _currentIndex = index);
+
+          switch (index) {
+            case 0:
+              break; // Dashboard (current)
+            case 1:
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                    builder: (_) =>
+                        const MedicineScheduleScreen()),
+              );
+              break;
+            case 2:
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                    builder: (_) =>
+                        const NearbyServicesScreen()),
+              );
+              break;
+            case 3:
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                    builder: (_) =>
+                        const LocalPharmacyScreen()),
+              );
+              break;
+          }
         },
+        items: const [
+          BottomNavigationBarItem(
+            icon: Icon(Icons.dashboard_outlined),
+            label: 'ড্যাশবোর্ড',
+          ),
+          BottomNavigationBarItem(
+            icon: Icon(Icons.medication_outlined),
+            label: 'ঔষধ',
+          ),
+          BottomNavigationBarItem(
+            icon: Icon(Icons.local_hospital_outlined),
+            label: 'হাসপাতাল',
+          ),
+          BottomNavigationBarItem(
+            icon: Icon(Icons.local_pharmacy_outlined),
+            label: 'ফার্মেসি',
+          ),
+        ],
       ),
     );
   }

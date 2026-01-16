@@ -45,7 +45,6 @@ class LocalPharmacyScreen extends StatelessWidget {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final colorScheme = theme.colorScheme;
-
     final hasData = _pharmacies.isNotEmpty;
 
     return Scaffold(
@@ -54,9 +53,11 @@ class LocalPharmacyScreen extends StatelessWidget {
         centerTitle: true,
       ),
 
+      /// ===============================
+      /// BODY
+      /// ===============================
       body: Column(
         children: [
-          /// Search + Filter
           Padding(
             padding: const EdgeInsets.all(AppDimensions.paddingMedium),
             child: Row(
@@ -86,7 +87,6 @@ class LocalPharmacyScreen extends StatelessWidget {
             ),
           ),
 
-          /// Pharmacy List
           Expanded(
             child: hasData
                 ? ListView.builder(
@@ -107,15 +107,30 @@ class LocalPharmacyScreen extends StatelessWidget {
           ),
         ],
       ),
+
+      /// ===============================
+      /// FLOATING ACTION BUTTON
+      /// ===============================
+      floatingActionButton: FloatingActionButton.extended(
+        heroTag: 'add pharmacy',
+        backgroundColor: colorScheme.primary,
+        foregroundColor: colorScheme.onPrimary,
+        icon: const Icon(Icons.add),
+        label: const Text('নতুন ফার্মেসি'),
+        onPressed: () {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('নতুন ফার্মেসি যোগ ফিচার শীঘ্রই আসছে'),
+            ),
+          );
+        },
+      ),
     );
   }
 }
 
-
-
 class _PharmacyCard extends StatelessWidget {
   final Map<String, dynamic> pharmacy;
-
   const _PharmacyCard({required this.pharmacy});
 
   @override
@@ -140,7 +155,6 @@ class _PharmacyCard extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          /// Header
           Row(
             children: [
               Container(
@@ -171,7 +185,6 @@ class _PharmacyCard extends StatelessWidget {
 
           const SizedBox(height: 12),
 
-          /// Distance & Rating
           Row(
             children: [
               Icon(Icons.location_on,
@@ -188,7 +201,6 @@ class _PharmacyCard extends StatelessWidget {
 
           const SizedBox(height: 12),
 
-          /// Actions
           Row(
             children: [
               Expanded(
@@ -202,8 +214,8 @@ class _PharmacyCard extends StatelessWidget {
                   onPressed: () {
                     ScaffoldMessenger.of(context).showSnackBar(
                       SnackBar(
-                        content:
-                            Text('${pharmacy['phone']} এ কল করা হচ্ছে...'),
+                        content: Text(
+                            '${pharmacy['phone']} এ কল করা হচ্ছে...'),
                       ),
                     );
                   },
@@ -235,12 +247,8 @@ class _PharmacyCard extends StatelessWidget {
   }
 }
 
-
-
-
 class _OpenStatus extends StatelessWidget {
   final bool isOpen;
-
   const _OpenStatus({required this.isOpen});
 
   @override
@@ -248,7 +256,9 @@ class _OpenStatus extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
       decoration: BoxDecoration(
-        color: isOpen ? Colors.green.withOpacity(0.1) : Colors.red.withOpacity(0.1),
+        color: isOpen
+            ? Colors.green.withOpacity(0.1)
+            : Colors.red.withOpacity(0.1),
         borderRadius: BorderRadius.circular(12),
       ),
       child: Text(

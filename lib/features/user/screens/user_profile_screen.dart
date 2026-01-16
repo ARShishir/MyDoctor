@@ -1,6 +1,8 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
 import '../screens/medical_documents_screen.dart';  
+import '../screens/notification.dart';
+import '../../auth/screens/login_screen.dart';
 
 class UserProfileScreen extends StatefulWidget {
   const UserProfileScreen({super.key});
@@ -261,9 +263,33 @@ class _UserProfileScreenState extends State<UserProfileScreen> {
                   _buildSection("Settings"),
                   const SizedBox(height: 8),
                   ...[
-                    _buildSettingsTile(Icons.notifications, "Notifications", () {}),
-                    _buildSettingsTile(Icons.security, "Privacy & Security", () {}),
-                    _buildSettingsTile(Icons.logout, "Log Out", () {}, isDestructive: true),
+                    _buildSettingsTile(
+                      Icons.notifications,
+                      "Notifications",
+                      () {
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (_) => const NotificationScreen(),
+                          ),
+                        );
+                      },
+                    ),
+                    _buildSettingsTile(
+                Icons.logout,
+                "Log Out",
+                () {
+                  Navigator.pushAndRemoveUntil(
+                    context,
+                    MaterialPageRoute(
+                      builder: (_) => const LoginScreen(),
+                    ),
+                    (route) => false,
+                  );
+                },
+                isDestructive: true,
+              ),
+
                   ],
                 ],
               ),

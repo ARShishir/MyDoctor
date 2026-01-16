@@ -10,11 +10,40 @@ import '../../features/hospital/screens/hospital_dashboard_screen.dart';
 import '../../features/pharmacy/screens/pharmacy_dashboard_screen.dart';
 import '../../features/admin/screens/admin_dashboard_screen.dart';
 import '../../features/user/screens/user_profile_screen.dart';
-// import '../../features/user/screens/';
 
+/// -------------------------------
+/// MOCK AUTH STATE
+/// -------------------------------
+final authProvider = StateProvider<bool>((ref) => false);
+
+/// -------------------------------
+/// APP ROUTER
+/// -------------------------------
 final appRouterProvider = Provider<GoRouter>((ref) {
+  final isLoggedIn = ref.watch(authProvider);
+
   return GoRouter(
     initialLocation: '/',
+    redirect: (context, state) {
+      final location = state.uri.path;
+
+      /// App open → Splash → Login
+      if (location == '/') {
+        return '/login';
+      }
+
+      /// Login না করলে user routes block
+      if (!isLoggedIn && location.startsWith('/user')) {
+        return '/login';
+      }
+
+      /// Login হয়ে গেলে আবার login page এ যাবে না
+      if (isLoggedIn && location == '/login') {
+        return '/user';
+      }
+
+      return null;
+    },
     routes: [
       GoRoute(
         path: '/',
@@ -24,7 +53,7 @@ final appRouterProvider = Provider<GoRouter>((ref) {
         path: '/login',
         builder: (_, __) => const LoginScreen(),
       ),
- 
+
       /// Dashboards
       GoRoute(
         path: '/user',
@@ -46,12 +75,7 @@ final appRouterProvider = Provider<GoRouter>((ref) {
         path: '/admin',
         builder: (_, __) => const AdminDashboardScreen(),
       ),
-      
-      GoRoute(
-        path: '/user',
-        builder: (_, __) => const UserDashboardScreen(),
-      ),
-     
+
       GoRoute(
         path: '/user/profile',
         builder: (_, __) => const UserProfileScreen(),

@@ -1,11 +1,10 @@
 import 'package:flutter/material.dart';
 import '../../../../core/constants/app_dimensions.dart';
-import '../widgets/empty_state_widget.dart';
+// import '../widgets/empty_state_widget.dart';
 
 class NearbyServicesScreen extends StatelessWidget {
   const NearbyServicesScreen({super.key});
 
-  // Enhanced dummy data
   final List<Map<String, dynamic>> _services = const [
     {
       'name': 'City Care Hospital',
@@ -22,6 +21,9 @@ class NearbyServicesScreen extends StatelessWidget {
       'distance': '800 m',
       'rating': 4.2,
       'isOpen': true,
+      'is24x7': true,
+      'openHours': '24 Hours',
+      'phone': '01712-345678',
       'color': Colors.purple,
       'icon': Icons.biotech,
     },
@@ -51,16 +53,16 @@ class NearbyServicesScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final colorScheme = Theme.of(context).colorScheme;
-    final hasServices = _services.isNotEmpty;
 
     return Scaffold(
       appBar: AppBar(
         title: const Text('কাছাকাছি সেবা'),
         centerTitle: true,
       ),
+
+      /// BODY
       body: Column(
         children: [
-          /// Search + Filter
           Padding(
             padding: const EdgeInsets.all(AppDimensions.paddingMedium),
             child: Row(
@@ -74,8 +76,8 @@ class NearbyServicesScreen extends StatelessWidget {
                       fillColor:
                           colorScheme.surfaceVariant.withOpacity(0.4),
                       border: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(
-                            AppDimensions.radiusLarge),
+                        borderRadius:
+                            BorderRadius.circular(AppDimensions.radiusLarge),
                         borderSide: BorderSide.none,
                       ),
                     ),
@@ -90,24 +92,27 @@ class NearbyServicesScreen extends StatelessWidget {
             ),
           ),
 
-          /// Services list
           Expanded(
-            child: hasServices
-                ? ListView.builder(
-                    padding: const EdgeInsets.symmetric(
-                        horizontal: AppDimensions.paddingMedium),
-                    itemCount: _services.length,
-                    itemBuilder: (context, index) {
-                      return _ServiceCard(service: _services[index]);
-                    },
-                  )
-                : const EmptyStateWidget(
-                    icon: Icons.location_off,
-                    title: 'কোনো সেবা পাওয়া যায়নি',
-                    subtitle: 'লোকেশন বা ফিল্টার পরিবর্তন করুন',
-                  ),
+            child: ListView.builder(
+              padding: const EdgeInsets.symmetric(
+                  horizontal: AppDimensions.paddingMedium),
+              itemCount: _services.length,
+              itemBuilder: (context, index) {
+                return _ServiceCard(service: _services[index]);
+              },
+            ),
           ),
         ],
+      ),
+
+      /// FLOATING ACTION BUTTON
+      floatingActionButton: FloatingActionButton.extended(
+        heroTag: 'add hospital',
+        backgroundColor: colorScheme.primary,
+        foregroundColor: colorScheme.onPrimary,
+        icon: const Icon(Icons.add),
+        label: const Text('নতুন হাসপাতাল'),
+        onPressed: () {},
       ),
     );
   }
@@ -115,7 +120,6 @@ class NearbyServicesScreen extends StatelessWidget {
 
 class _ServiceCard extends StatelessWidget {
   final Map<String, dynamic> service;
-
   const _ServiceCard({required this.service});
 
   @override
@@ -139,8 +143,9 @@ class _ServiceCard extends StatelessWidget {
         ],
       ),
       child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          /// Header
+          /// HEADER
           Row(
             children: [
               Container(
@@ -149,32 +154,20 @@ class _ServiceCard extends StatelessWidget {
                   color: color.withOpacity(0.15),
                   shape: BoxShape.circle,
                 ),
-                child: Icon(
-                  service['icon'],
-                  color: color,
-                  size: 28,
-                ),
+                child: Icon(service['icon'], color: color, size: 28),
               ),
               const SizedBox(width: 16),
               Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text(
-                      service['name'],
-                      style: Theme.of(context)
-                          .textTheme
-                          .titleMedium
-                          ?.copyWith(fontWeight: FontWeight.w700),
-                    ),
-                    const SizedBox(height: 4),
-                    Text(
-                      service['type'],
-                      style: TextStyle(
-                        color: Colors.grey[600],
-                        fontSize: 14,
-                      ),
-                    ),
+                    Text(service['name'],
+                        style: Theme.of(context)
+                            .textTheme
+                            .titleMedium
+                            ?.copyWith(fontWeight: FontWeight.w700)),
+                    Text(service['type'],
+                        style: TextStyle(color: Colors.grey[600])),
                   ],
                 ),
               ),
@@ -184,7 +177,7 @@ class _ServiceCard extends StatelessWidget {
 
           const SizedBox(height: 12),
 
-          /// Distance & Rating
+          /// DISTANCE & RATING
           Row(
             children: [
               Icon(Icons.location_on,
@@ -198,7 +191,7 @@ class _ServiceCard extends StatelessWidget {
             ],
           ),
 
-          /// Pharmacy Extra Details
+          /// PHARMACY DETAILS
           if (isPharmacy) ...[
             const SizedBox(height: 12),
             Row(
@@ -207,30 +200,26 @@ class _ServiceCard extends StatelessWidget {
                     size: 16, color: Colors.grey[600]),
                 const SizedBox(width: 6),
                 Text(service['openHours']),
-                if (service['is24x7'] == true) ...[
-                  const SizedBox(width: 12),
-                  Container(
-                    padding: const EdgeInsets.symmetric(
-                        horizontal: 10, vertical: 4),
-                    decoration: BoxDecoration(
-                      color: Colors.green.withOpacity(0.15),
-                      borderRadius: BorderRadius.circular(12),
-                    ),
-                    child: const Text(
-                      '24/7',
-                      style: TextStyle(
-                          color: Colors.green,
-                          fontWeight: FontWeight.w600,
-                          fontSize: 12),
-                    ),
+                const SizedBox(width: 12),
+                Container(
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                  decoration: BoxDecoration(
+                    color: Colors.green.withOpacity(0.15),
+                    borderRadius: BorderRadius.circular(12),
                   ),
-                ],
+                  child: const Text(
+                    '24/7',
+                    style: TextStyle(
+                        color: Colors.green,
+                        fontWeight: FontWeight.w600,
+                        fontSize: 12),
+                  ),
+                ),
               ],
             ),
-          ],
 
-          /// Pharmacy Actions
-          if (isPharmacy) ...[
+            /// CALL & LOCATION BUTTONS (RESTORED ✅)
             const SizedBox(height: 16),
             Row(
               children: [
@@ -238,10 +227,6 @@ class _ServiceCard extends StatelessWidget {
                   child: OutlinedButton.icon(
                     icon: const Icon(Icons.call),
                     label: const Text('কল'),
-                    style: OutlinedButton.styleFrom(
-                      foregroundColor: color,
-                      side: BorderSide(color: color),
-                    ),
                     onPressed: () {
                       ScaffoldMessenger.of(context).showSnackBar(
                         SnackBar(
@@ -256,7 +241,7 @@ class _ServiceCard extends StatelessWidget {
                 Expanded(
                   child: ElevatedButton.icon(
                     icon: const Icon(Icons.directions),
-                    label: const Text('দিকনির্দেশ'),
+                    label: const Text('লোকেশন'),
                     style: ElevatedButton.styleFrom(
                       backgroundColor: color,
                       foregroundColor: Colors.white,
@@ -279,10 +264,8 @@ class _ServiceCard extends StatelessWidget {
   }
 }
 
-
 class _OpenStatus extends StatelessWidget {
   final bool isOpen;
-
   const _OpenStatus({required this.isOpen});
 
   @override
