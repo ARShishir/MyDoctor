@@ -166,30 +166,84 @@ flutter pub get
 flutter run
 ```
 
-📌 Project Status
+## 📌 Project Status
 
 🚧 Currently under active development
 
-Upcoming:
+## ScreenShorts:
+### SplashPage
+<img width="464" height="944" alt="splashPage" src="https://github.com/user-attachments/assets/69e966f7-3e8a-400a-99f7-e58f6bd2a613" />
 
-UI finalization
 
-Backend integration
+### SignupPageWithoutInput
+<img width="464" height="944" alt="SignupPageWithoutInput" src="https://github.com/user-attachments/assets/5a9ebd37-23a3-4747-b119-3347abdd8c92" />
+
+
+### LoginWithoutInputs
+<img width="464" height="944" alt="LoginWithoutInputs" src="https://github.com/user-attachments/assets/fba79955-871a-4ae7-b4f8-1684ce2108a4" />
+
+
+### TrywithInvalid
+<img width="464" height="944" alt="TrywithInvalid" src="https://github.com/user-attachments/assets/5636d572-2f2a-4c1a-8b4f-29845b0c434f" />
+
+
+### TrywithWrongPassword
+<img width="464" height="944" alt="TrywithWrongPassword" src="https://github.com/user-attachments/assets/ffa029eb-f745-469a-946f-fd6b390071e4" />
+
+
+### UserDashboard
+<img width="464" height="944" alt="UserDashboard" src="https://github.com/user-attachments/assets/78bbe4a4-3bd6-43fe-bcac-95d7b25439d5" />
+
+
+### UserProfile
+<img width="464" height="944" alt="UserProfile" src="https://github.com/user-attachments/assets/1fdf3875-da58-42e7-8273-1d0a99306795" />
+
+
+### Hospitals
+<img width="464" height="944" alt="Hospitals" src="https://github.com/user-attachments/assets/0a9e6dc4-082a-4975-8e97-c31f62713a54" />
+
+
+### HospitalInfo
+<img width="464" height="944" alt="HospitalInfo" src="https://github.com/user-attachments/assets/921cd177-e16b-49d3-9592-86b9f5989a67" />
+
+
+### Pharmacys
+<img width="464" height="944" alt="Pharmacys" src="https://github.com/user-attachments/assets/77af13d2-3f7d-4d2e-aedf-bd329f112d14" />
+
+
+### PharmacyInfo
+<img width="464" height="944" alt="PharmacyInfo" src="https://github.com/user-attachments/assets/72fd25ca-c167-4f1c-8788-c55630d19b6f" />
+
+
+### Medicine
+<img width="464" height="944" alt="Medician" src="https://github.com/user-attachments/assets/b622463c-30d3-4a93-b603-0e903f78fe88" />
+
+
+### MedicialDocument
+<img width="464" height="944" alt="MedicialDocument" src="https://github.com/user-attachments/assets/e507b187-cb22-41af-828a-3cc732590fc8" />
+
+
+### Notifications
+<img width="464" height="944" alt="Notifications" src="https://github.com/user-attachments/assets/e98ca1b3-0fec-4757-bbca-f8c0d3adc06c" />
+
+
+
+## Backend integration
 
 AI recommendation tuning
 
 Security hardening
 
-🤝 Contributing
+## 🤝 Contributing
 
 Contributions are welcome!
 Please open an issue or submit a pull request for improvements or bug fixes.
 
-📜 License
+## 📜 License
 
 This project is intended for educational and healthcare innovation purposes.
 
-🌐 Links
+## 🌐 Links
 
 Flutter: https://flutter.dev
 
