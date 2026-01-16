@@ -1,7 +1,7 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
-import '../screens/medical_documents_screen.dart';  
-import '../screens/notification.dart';
+import 'allmedicine/medical_documents_screen.dart';  
+import 'allmedicine/notification.dart';
 import '../../auth/screens/login_screen.dart';
 
 class UserProfileScreen extends StatefulWidget {

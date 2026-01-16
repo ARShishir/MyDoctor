@@ -3,7 +3,6 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import '../../../core/routes/app_routes.dart';
 
-
 class LoginScreen extends ConsumerStatefulWidget {
   const LoginScreen({super.key});
 
@@ -19,6 +18,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
 
   bool _obscurePassword = true;
   bool _isLoading = false;
+  bool _isGoogleLoading = false;
 
   static const String demoEmail = 'demo@gmail.com';
   static const String demoPassword = '123456';
@@ -40,7 +40,6 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
       ref.read(authProvider.notifier).state = true;
       context.go('/user');
     } else {
-      /// ❌ LOGIN FAILED
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
           content: Text('Incorrect email or password'),
@@ -48,6 +47,19 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
         ),
       );
     }
+  }
+
+  /// ---------------- GOOGLE AUTH (DEMO) ----------------
+  Future<void> _loginWithGoogle() async {
+    setState(() => _isGoogleLoading = true);
+
+    await Future.delayed(const Duration(seconds: 2));
+
+    setState(() => _isGoogleLoading = false);
+
+    /// ✅ GOOGLE LOGIN SUCCESS (MOCK)
+    ref.read(authProvider.notifier).state = true;
+    context.go('/user');
   }
 
   @override
@@ -184,6 +196,63 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                               style: TextStyle(fontSize: 16),
                             ),
                     ),
+                  ),
+
+                  const SizedBox(height: 20),
+
+                  /// OR DIVIDER
+                  Row(
+                    children: const [
+                      Expanded(child: Divider()),
+                      Padding(
+                        padding: EdgeInsets.symmetric(horizontal: 8),
+                        child: Text('OR'),
+                      ),
+                      Expanded(child: Divider()),
+                    ],
+                  ),
+
+                  const SizedBox(height: 20),
+
+                  /// Google Login Button
+                  SizedBox(
+                    width: double.infinity,
+                    height: 52,
+                    child: OutlinedButton.icon(
+                      icon: _isGoogleLoading
+                          ? const SizedBox(
+                              height: 18,
+                              width: 18,
+                              child: CircularProgressIndicator(
+                                strokeWidth: 2,
+                              ),
+                            )
+                          : const Icon(Icons.g_mobiledata, size: 28),
+                      label: const Text('Continue with Google'),
+                      style: OutlinedButton.styleFrom(
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(14),
+                        ),
+                      ),
+                      onPressed:
+                          _isGoogleLoading ? null : _loginWithGoogle,
+                    ),
+                  ),
+
+                  const SizedBox(height: 24),
+
+                  /// SIGN UP LINK
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      const Text("Don't have an account?"),
+                      TextButton(
+                        onPressed: () {
+                          context.go('/register');
+                        },
+                        child: const Text('Sign up'),
+                      ),
+                    ],
                   ),
                 ],
               ),

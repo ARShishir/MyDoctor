@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
 // 🔁 CHANGE THIS IMPORT TO YOUR ACTUAL DASHBOARD FILE
-import 'user_dashboard_screen.dart';
+import '../user_dashboard_screen.dart';
 
 class NotificationScreen extends StatefulWidget {
   const NotificationScreen({super.key});

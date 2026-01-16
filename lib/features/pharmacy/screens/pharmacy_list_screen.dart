@@ -1,11 +1,10 @@
 import 'package:flutter/material.dart';
 import '../../../../core/constants/app_dimensions.dart';
-import '../widgets/empty_state_widget.dart';
-
+import '../../user/widgets/empty_state_widget.dart';
+import 'pharmacy_profile_screen.dart';
 class LocalPharmacyScreen extends StatelessWidget {
   const LocalPharmacyScreen({super.key});
 
-  // Dummy pharmacy data
   final List<Map<String, dynamic>> _pharmacies = const [
     {
       'name': 'Green Life Pharmacy',
@@ -13,6 +12,8 @@ class LocalPharmacyScreen extends StatelessWidget {
       'rating': 4.6,
       'isOpen': true,
       'phone': '01234-567890',
+      'address': 'ধানমন্ডি, ঢাকা',
+      'openHours': '24/7',
       'color': Colors.green,
     },
     {
@@ -21,6 +22,8 @@ class LocalPharmacyScreen extends StatelessWidget {
       'rating': 4.2,
       'isOpen': true,
       'phone': '01700-111222',
+      'address': 'মিরপুর, ঢাকা',
+      'openHours': '8 AM - 11 PM',
       'color': Colors.teal,
     },
     {
@@ -29,6 +32,8 @@ class LocalPharmacyScreen extends StatelessWidget {
       'rating': 4.0,
       'isOpen': false,
       'phone': '01888-999000',
+      'address': 'উত্তরা, ঢাকা',
+      'openHours': '9 AM - 10 PM',
       'color': Colors.blue,
     },
     {
@@ -37,14 +42,15 @@ class LocalPharmacyScreen extends StatelessWidget {
       'rating': 4.8,
       'isOpen': true,
       'phone': '01999-333444',
+      'address': 'গুলশান, ঢাকা',
+      'openHours': '24/7',
       'color': Colors.greenAccent,
     },
   ];
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    final colorScheme = theme.colorScheme;
+    final colorScheme = Theme.of(context).colorScheme;
     final hasData = _pharmacies.isNotEmpty;
 
     return Scaffold(
@@ -52,10 +58,6 @@ class LocalPharmacyScreen extends StatelessWidget {
         title: const Text('কাছাকাছি ফার্মেসি'),
         centerTitle: true,
       ),
-
-      /// ===============================
-      /// BODY
-      /// ===============================
       body: Column(
         children: [
           Padding(
@@ -71,8 +73,8 @@ class LocalPharmacyScreen extends StatelessWidget {
                       fillColor:
                           colorScheme.surfaceVariant.withOpacity(0.4),
                       border: OutlineInputBorder(
-                        borderRadius:
-                            BorderRadius.circular(AppDimensions.radiusLarge),
+                        borderRadius: BorderRadius.circular(
+                            AppDimensions.radiusLarge),
                         borderSide: BorderSide.none,
                       ),
                     ),
@@ -86,7 +88,6 @@ class LocalPharmacyScreen extends StatelessWidget {
               ],
             ),
           ),
-
           Expanded(
             child: hasData
                 ? ListView.builder(
@@ -96,7 +97,19 @@ class LocalPharmacyScreen extends StatelessWidget {
                     itemCount: _pharmacies.length,
                     itemBuilder: (context, index) {
                       final pharmacy = _pharmacies[index];
-                      return _PharmacyCard(pharmacy: pharmacy);
+                      return GestureDetector(
+                        onTap: () {
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (_) => PharmacyProfileScreen(
+                                pharmacy: pharmacy,
+                              ),
+                            ),
+                          );
+                        },
+                        child: _PharmacyCard(pharmacy: pharmacy),
+                      );
                     },
                   )
                 : const EmptyStateWidget(
@@ -107,10 +120,6 @@ class LocalPharmacyScreen extends StatelessWidget {
           ),
         ],
       ),
-
-      /// ===============================
-      /// FLOATING ACTION BUTTON
-      /// ===============================
       floatingActionButton: FloatingActionButton.extended(
         heroTag: 'add pharmacy',
         backgroundColor: colorScheme.primary,
@@ -182,9 +191,7 @@ class _PharmacyCard extends StatelessWidget {
               _OpenStatus(isOpen: pharmacy['isOpen']),
             ],
           ),
-
           const SizedBox(height: 12),
-
           Row(
             children: [
               Icon(Icons.location_on,
@@ -196,49 +203,6 @@ class _PharmacyCard extends StatelessWidget {
                   size: 16, color: Colors.amber),
               const SizedBox(width: 4),
               Text(pharmacy['rating'].toString()),
-            ],
-          ),
-
-          const SizedBox(height: 12),
-
-          Row(
-            children: [
-              Expanded(
-                child: OutlinedButton.icon(
-                  icon: const Icon(Icons.call),
-                  label: const Text('কল'),
-                  style: OutlinedButton.styleFrom(
-                    foregroundColor: color,
-                    side: BorderSide(color: color),
-                  ),
-                  onPressed: () {
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      SnackBar(
-                        content: Text(
-                            '${pharmacy['phone']} এ কল করা হচ্ছে...'),
-                      ),
-                    );
-                  },
-                ),
-              ),
-              const SizedBox(width: 12),
-              Expanded(
-                child: ElevatedButton.icon(
-                  icon: const Icon(Icons.directions),
-                  label: const Text('দিকনির্দেশ'),
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: color,
-                    foregroundColor: Colors.white,
-                  ),
-                  onPressed: () {
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(
-                        content: Text('ম্যাপ ফিচার শীঘ্রই আসছে'),
-                      ),
-                    );
-                  },
-                ),
-              ),
             ],
           ),
         ],

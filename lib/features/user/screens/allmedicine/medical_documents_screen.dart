@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
-import '../../../../core/constants/app_dimensions.dart';
-import '../widgets/document_card.dart';
-import '../widgets/empty_state_widget.dart';
+import '../../../../../core/constants/app_dimensions.dart';
+import '../../widgets/document_card.dart';
+import '../../widgets/empty_state_widget.dart';
 // import '../widgets/prescription_card.dart'; // যদি আলাদা কার্ড ব্যবহার করতে চাও
 
 // নতুন ডিটেইল স্ক্রিন (যেখানে ডকুমেন্টের পুরো বিস্তারিত দেখাবে)

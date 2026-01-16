@@ -3,11 +3,11 @@ import 'package:flutter/material.dart';
 import '../../../../core/constants/app_dimensions.dart';
 import '../widgets/user_header.dart';
 
-import 'medical_documents_screen.dart';
-import 'medicine_schedule_screen.dart';
-import 'hospital_services_screen.dart';
-import 'local_pharmacy.dart';
-import 'notification.dart';
+import 'allmedicine/medical_documents_screen.dart';
+import 'allmedicine/medicine_schedule_screen.dart';
+import '../../hospital/screens/hospital_list_screen.dart';
+import '../../pharmacy/screens/pharmacy_list_screen.dart';
+import 'allmedicine/notification.dart';
 /// ===============================
 /// DASHBOARD ACTION CARD
 /// ===============================
