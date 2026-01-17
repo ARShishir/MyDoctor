@@ -1,21 +1,21 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'allmedicine/medical_documents_screen.dart';  
 import 'allmedicine/notification.dart';
-import '../../auth/screens/login_screen.dart';
+import '../../../core/routes/app_routes.dart'; // Auth provider + GoRouter
 
-class UserProfileScreen extends StatefulWidget {
+class UserProfileScreen extends ConsumerStatefulWidget {
   const UserProfileScreen({super.key});
 
   @override
-  State<UserProfileScreen> createState() => _UserProfileScreenState();
+  ConsumerState<UserProfileScreen> createState() => _UserProfileScreenState();
 }
 
-class _UserProfileScreenState extends State<UserProfileScreen> {
+class _UserProfileScreenState extends ConsumerState<UserProfileScreen> {
   final String userName = "Abdur Rahman";
   final String userBio = "Flutter Developer • Health Tech Enthusiast\nDhaka, Bangladesh";
   final String profileImage = "https://avatars.githubusercontent.com/u/136100734?v=4";
-
 
   final List<Map<String, dynamic>> _medicalDocs = const [
     {
@@ -41,7 +41,6 @@ class _UserProfileScreenState extends State<UserProfileScreen> {
     },
   ];
 
-  // Auto-scroll এর জন্য কন্ট্রোলার
   final ScrollController _scrollController = ScrollController();
   Timer? _autoScrollTimer;
 
@@ -57,11 +56,9 @@ class _UserProfileScreenState extends State<UserProfileScreen> {
         final currentOffset = _scrollController.offset;
         final maxOffset = _scrollController.position.maxScrollExtent;
 
-        // যদি শেষের দিকে চলে যায় তাহলে শুরুতে ফিরে আসবে (infinite illusion)
         if (currentOffset >= maxOffset - 10) {
           _scrollController.jumpTo(0);
         } else {
-          // প্রতি ১ সেকেন্ডে ১২০ pixels করে স্ক্রল (smooth feel এর জন্য)
           _scrollController.animateTo(
             currentOffset + 120,
             duration: const Duration(milliseconds: 800),
@@ -87,7 +84,6 @@ class _UserProfileScreenState extends State<UserProfileScreen> {
     return Scaffold(
       body: CustomScrollView(
         slivers: [
-          // হেডার (SliverAppBar) – আগের মতোই রাখা হয়েছে
           SliverAppBar(
             expandedHeight: 240.0,
             floating: false,
@@ -161,8 +157,6 @@ class _UserProfileScreenState extends State<UserProfileScreen> {
               ),
             ),
           ),
-
-          // মূল কনটেন্ট
           SliverToBoxAdapter(
             child: Padding(
               padding: const EdgeInsets.fromLTRB(20, 16, 20, 40),
@@ -182,61 +176,46 @@ class _UserProfileScreenState extends State<UserProfileScreen> {
                     style: Theme.of(context).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.w700),
                   ),
                   const SizedBox(height: 12),
-
-                  // Auto-scrolling Infinite Horizontal List
-                SizedBox(
-  height: 230,
-  child: Listener(
-    onPointerDown: (_) {
-      // যখন আঙুল দিয়ে ধরলো → auto-scroll বন্ধ
-      _autoScrollTimer?.cancel();
-    },
-    onPointerUp: (_) {
-      // আঙুল ছেড়ে দিলে → ১ সেকেন্ড পর আবার auto-scroll শুরু
-      Future.delayed(const Duration(milliseconds: 800), () {
-        if (mounted) {
-          _startAutoScroll();
-        }
-      });
-    },
-    onPointerCancel: (_) {
-      // যদি কোনো কারণে ক্যানসেল হয় → আবার শুরু
-      Future.delayed(const Duration(milliseconds: 800), () {
-        if (mounted) _startAutoScroll();
-      });
-    },
-    child: ListView.builder(
-      controller: _scrollController,
-      scrollDirection: Axis.horizontal,
-      physics: const BouncingScrollPhysics(),
-      itemCount: _medicalDocs.length * 1000, // infinite illusion
-      itemBuilder: (context, index) {
-        final realIndex = index % _medicalDocs.length;
-        final doc = _medicalDocs[realIndex];
-
-        return Padding(
-          padding: const EdgeInsets.only(right: 16),
-          child: GestureDetector(
-            // সাধারণ ট্যাপ → ডিটেইল পেজে যাবে
-            onTap: () {
-              // এখানে তোমার prescription_card.dart এর DocumentCard এর লজিক বা নতুন স্ক্রিন
-              Navigator.push(
-                context,
-                MaterialPageRoute(
-                  builder: (context) => DocumentDetailScreen(document: doc),
-                ),
-              );
-              // অথবা যদি BottomSheet দেখাতে চাও:
-              // showModalBottomSheet(...);
-            },
-            child: _buildMedicalCard(doc),
-          ),
-        );
-      },
-    ),
-  ),
-),
-
+                  SizedBox(
+                    height: 230,
+                    child: Listener(
+                      onPointerDown: (_) => _autoScrollTimer?.cancel(),
+                      onPointerUp: (_) {
+                        Future.delayed(const Duration(milliseconds: 800), () {
+                          if (mounted) _startAutoScroll();
+                        });
+                      },
+                      onPointerCancel: (_) {
+                        Future.delayed(const Duration(milliseconds: 800), () {
+                          if (mounted) _startAutoScroll();
+                        });
+                      },
+                      child: ListView.builder(
+                        controller: _scrollController,
+                        scrollDirection: Axis.horizontal,
+                        physics: const BouncingScrollPhysics(),
+                        itemCount: _medicalDocs.length * 1000,
+                        itemBuilder: (context, index) {
+                          final realIndex = index % _medicalDocs.length;
+                          final doc = _medicalDocs[realIndex];
+                          return Padding(
+                            padding: const EdgeInsets.only(right: 16),
+                            child: GestureDetector(
+                              onTap: () {
+                                Navigator.push(
+                                  context,
+                                  MaterialPageRoute(
+                                    builder: (context) => DocumentDetailScreen(document: doc),
+                                  ),
+                                );
+                              },
+                              child: _buildMedicalCard(doc),
+                            ),
+                          );
+                        },
+                      ),
+                    ),
+                  ),
                   const SizedBox(height: 36),
                   _buildSection("About Me"),
                   const SizedBox(height: 12),
@@ -263,20 +242,15 @@ class _UserProfileScreenState extends State<UserProfileScreen> {
                       },
                     ),
                     _buildSettingsTile(
-                Icons.logout,
-                "Log Out",
-                () {
-                  Navigator.pushAndRemoveUntil(
-                    context,
-                    MaterialPageRoute(
-                      builder: (_) => const LoginScreen(),
+                      Icons.logout,
+                      "Log Out",
+                      () {
+                        // ✅ Riverpod + GoRouter friendly logout
+                        ref.read(authProvider.notifier).state = false;
+                        // Redirect automatically via GoRouter
+                      },
+                      isDestructive: true,
                     ),
-                    (route) => false,
-                  );
-                },
-                isDestructive: true,
-              ),
-
                   ],
                 ],
               ),
@@ -287,8 +261,6 @@ class _UserProfileScreenState extends State<UserProfileScreen> {
     );
   }
 
-  // বাকি সব ফাংশন আগের মতোই (এখানে শুধু প্রয়োজনীয় অংশ দেখানো হলো)
- 
   Widget _buildGlassButton(String text, IconData icon, VoidCallback onTap) {
     return GestureDetector(
       onTap: onTap,
