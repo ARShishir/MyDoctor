@@ -1,6 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
+import '../../../../../core/constants/app_dimensions.dart';
+import '../../widgets/empty_state_widget.dart';
+
+/// ===============================
+/// MEDICINE SCHEDULE SCREEN
+/// ===============================
 class MedicineScheduleScreen extends StatefulWidget {
   const MedicineScheduleScreen({super.key});
 
@@ -53,36 +59,89 @@ class _MedicineScheduleScreenState extends State<MedicineScheduleScreen> {
         title: const Text('আজকের ঔষধ'),
         centerTitle: true,
       ),
-      body: ListView(
-        padding: const EdgeInsets.all(16),
+      body: Column(
         children: [
-          _ProgressCard(
-            total: _schedules.length,
-            taken: takenCount,
+          /// Progress Card
+          Padding(
+            padding: const EdgeInsets.all(AppDimensions.paddingMedium),
+            child: _ProgressCard(total: _schedules.length, taken: takenCount),
           ),
-          const SizedBox(height: 20),
-          ..._buildGroupedSchedules(context),
+
+          /// Search bar
+          Padding(
+            padding: const EdgeInsets.symmetric(
+                horizontal: AppDimensions.paddingMedium),
+            child: TextField(
+              decoration: InputDecoration(
+                hintText: 'ঔষধ খুঁজুন...',
+                prefixIcon: const Icon(Icons.search),
+                filled: true,
+                fillColor:
+                    Theme.of(context).colorScheme.surfaceVariant.withOpacity(0.2),
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(AppDimensions.radiusLarge),
+                  borderSide: BorderSide.none,
+                ),
+              ),
+              onChanged: (value) {
+                setState(() {
+                  // Dynamic filtering
+                  // We'll filter in _buildGroupedSchedules
+                });
+              },
+            ),
+          ),
+
+          const SizedBox(height: 12),
+
+          /// Medicine List
+          Expanded(
+            child: _schedules.isNotEmpty
+                ? ListView(
+                    padding: const EdgeInsets.symmetric(
+                        horizontal: AppDimensions.paddingMedium),
+                    children: _buildGroupedSchedules(context),
+                  )
+                : const EmptyStateWidget(
+                    icon: Icons.medical_services_outlined,
+                    title: 'কোনো ঔষধ নেই',
+                    subtitle: 'নতুন ঔষধ যোগ করুন',
+                  ),
+          ),
         ],
       ),
+
       floatingActionButton: FloatingActionButton.extended(
-        onPressed: () {
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('নতুন ঔষধ যোগ করার ফিচার আসছে শীঘ্রই')),
-          );
-        },
+        heroTag: 'add_medicine',
         icon: const Icon(Icons.add),
         label: const Text('নতুন ঔষধ'),
+        onPressed: () async {
+          final result = await showDialog<Map<String, dynamic>>(
+            context: context,
+            builder: (_) => const AddMedicineDialog(),
+          );
+
+          if (result != null) {
+            setState(() {
+              _schedules.add(result);
+            });
+          }
+        },
       ),
     );
   }
 
+  /// Group medicines by time
   List<Widget> _buildGroupedSchedules(BuildContext context) {
-    final groups = {
-      '🌅 সকাল': _schedules.where((e) => e['time'].hour < 12).toList(),
-      '🌞 দুপুর': _schedules
-          .where((e) => e['time'].hour >= 12 && e['time'].hour < 18)
-          .toList(),
-      '🌙 রাত': _schedules.where((e) => e['time'].hour >= 18).toList(),
+    final morning = _schedules.where((e) => e['time'].hour < 12).toList();
+    final afternoon =
+        _schedules.where((e) => e['time'].hour >= 12 && e['time'].hour < 18).toList();
+    final night = _schedules.where((e) => e['time'].hour >= 18).toList();
+
+    final Map<String, List<Map<String, dynamic>>> groups = {
+      '🌅 সকাল': morning,
+      '🌞 দুপুর': afternoon,
+      '🌙 রাত': night,
     };
 
     return groups.entries
@@ -119,7 +178,6 @@ class _MedicineScheduleScreenState extends State<MedicineScheduleScreen> {
 }
 
 /// ---------------- PROGRESS CARD ----------------
-
 class _ProgressCard extends StatelessWidget {
   final int total;
   final int taken;
@@ -133,16 +191,13 @@ class _ProgressCard extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
-        color: Theme.of(context).colorScheme.primaryContainer.withOpacity(.3),
+        color: Theme.of(context).colorScheme.primaryContainer.withOpacity(.2),
         borderRadius: BorderRadius.circular(20),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(
-            'আজকের অগ্রগতি',
-            style: Theme.of(context).textTheme.titleMedium,
-          ),
+          Text('আজকের অগ্রগতি', style: Theme.of(context).textTheme.titleMedium),
           const SizedBox(height: 12),
           ClipRRect(
             borderRadius: BorderRadius.circular(10),
@@ -157,21 +212,16 @@ class _ProgressCard extends StatelessWidget {
 }
 
 /// ---------------- MEDICINE CARD ----------------
-
 class MedicineCard extends StatelessWidget {
   final Map<String, dynamic> data;
   final VoidCallback onToggle;
 
-  const MedicineCard({
-    super.key,
-    required this.data,
-    required this.onToggle,
-  });
+  const MedicineCard({super.key, required this.data, required this.onToggle});
 
   @override
   Widget build(BuildContext context) {
-    final bool taken = data['taken'];
-    final Color color = data['color'];
+    final taken = data['taken'] as bool;
+    final color = data['color'] as Color;
 
     return Opacity(
       opacity: taken ? 0.55 : 1,
@@ -186,10 +236,7 @@ class MedicineCard extends StatelessWidget {
             padding: const EdgeInsets.all(16),
             child: Row(
               children: [
-                _TimeBlock(
-                  time: data['time'],
-                  color: color,
-                ),
+                _TimeBlock(time: data['time'], color: color),
                 const SizedBox(width: 16),
                 Expanded(
                   child: Column(
@@ -219,8 +266,7 @@ class MedicineCard extends StatelessWidget {
                         const Text(
                           'নেয়া হয়েছে ✔',
                           style: TextStyle(
-                              color: Colors.green,
-                              fontWeight: FontWeight.w600),
+                              color: Colors.green, fontWeight: FontWeight.w600),
                         ),
                     ],
                   ),
@@ -251,10 +297,7 @@ class MedicineCard extends StatelessWidget {
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text(
-              data['medicine'],
-              style: Theme.of(context).textTheme.titleLarge,
-            ),
+            Text(data['medicine'], style: Theme.of(context).textTheme.titleLarge),
             const SizedBox(height: 12),
             Text('ডোজ: ${data['dosage']}'),
             Text('সময়: ${data['time'].format(context)}'),
@@ -263,12 +306,10 @@ class MedicineCard extends StatelessWidget {
         ),
       ),
     );
-    
   }
 }
 
 /// ---------------- TIME BLOCK ----------------
-
 class _TimeBlock extends StatelessWidget {
   final TimeOfDay time;
   final Color color;
@@ -289,16 +330,106 @@ class _TimeBlock extends StatelessWidget {
         children: [
           const Icon(Icons.alarm),
           const SizedBox(height: 4),
-          Text(
-            time.format(context),
-            style: TextStyle(
-              fontWeight: FontWeight.bold,
-              color: color,
-            ),
-          ),
+          Text(time.format(context),
+              style: TextStyle(fontWeight: FontWeight.bold, color: color)),
         ],
       ),
     );
   }
 }
 
+/// ---------------- ADD MEDICINE DIALOG ----------------
+class AddMedicineDialog extends StatefulWidget {
+  const AddMedicineDialog({super.key});
+
+  @override
+  State<AddMedicineDialog> createState() => _AddMedicineDialogState();
+}
+
+class _AddMedicineDialogState extends State<AddMedicineDialog> {
+  final _medicineController = TextEditingController();
+  final _dosageController = TextEditingController();
+  final _frequencyController = TextEditingController();
+  TimeOfDay _selectedTime = TimeOfDay.now();
+  Color _selectedColor = Colors.blue;
+
+  Future<void> _pickTime() async {
+    final time = await showTimePicker(context: context, initialTime: _selectedTime);
+    if (time != null) setState(() => _selectedTime = time);
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return AlertDialog(
+      title: const Text('নতুন ঔষধ যোগ করুন'),
+      content: SingleChildScrollView(
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            TextField(
+              controller: _medicineController,
+              decoration: const InputDecoration(labelText: 'ঔষধের নাম'),
+            ),
+            const SizedBox(height: 12),
+            TextField(
+              controller: _dosageController,
+              decoration: const InputDecoration(labelText: 'ডোজ'),
+            ),
+            const SizedBox(height: 12),
+            TextField(
+              controller: _frequencyController,
+              decoration: const InputDecoration(labelText: 'নিয়ম'),
+            ),
+            const SizedBox(height: 12),
+            Row(
+              children: [
+                OutlinedButton.icon(
+                  onPressed: _pickTime,
+                  icon: const Icon(Icons.access_time),
+                  label: Text('সময়: ${_selectedTime.format(context)}'),
+                ),
+                const SizedBox(width: 16),
+                DropdownButton<Color>(
+                  value: _selectedColor,
+                  items: const [
+                    DropdownMenuItem(value: Colors.blue, child: Text('Blue')),
+                    DropdownMenuItem(value: Colors.redAccent, child: Text('Red')),
+                    DropdownMenuItem(value: Colors.green, child: Text('Green')),
+                    DropdownMenuItem(value: Colors.purple, child: Text('Purple')),
+                  ],
+                  onChanged: (value) {
+                    if (value != null) setState(() => _selectedColor = value);
+                  },
+                ),
+              ],
+            ),
+          ],
+        ),
+      ),
+      actions: [
+        TextButton(onPressed: () => Navigator.pop(context), child: const Text('বাতিল')),
+        ElevatedButton(
+            onPressed: () {
+              if (_medicineController.text.isEmpty || _dosageController.text.isEmpty) {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(content: Text('সব তথ্য পূরণ করুন')),
+                );
+                return;
+              }
+
+              Navigator.pop(context, {
+                'medicine': _medicineController.text,
+                'dosage': _dosageController.text,
+                'frequency': _frequencyController.text.isEmpty
+                    ? 'প্রতিদিন'
+                    : _frequencyController.text,
+                'time': _selectedTime,
+                'color': _selectedColor,
+                'taken': false,
+              });
+            },
+            child: const Text('সংরক্ষণ')),
+      ],
+    );
+  }
+}

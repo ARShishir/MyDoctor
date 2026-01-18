@@ -2,11 +2,23 @@ import 'package:flutter/material.dart';
 import '../../../../core/constants/app_dimensions.dart';
 
 class HospitalProfileScreen extends StatelessWidget {
-  const HospitalProfileScreen({super.key});
+  final Map<String, dynamic>? service;
+  const HospitalProfileScreen({super.key, this.service});
 
   @override
   Widget build(BuildContext context) {
-    final colorScheme = Theme.of(context).colorScheme;
+  // final colorScheme = Theme.of(context).colorScheme; // Material3 required
+
+    final name = service?['name'] ?? 'হাসপাতাল';
+    final type = service?['type'] ?? 'Type';
+    final rating = service?['rating'] ?? 0.0;
+    final distance = service?['distance'] ?? '0 km';
+    final openHours = service?['openHours'] ?? '24/7';
+    final isOpen = service?['isOpen'] ?? true;
+    final phone = service?['phone'] ?? '';
+    final address = service?['address'] ?? '';
+    final color = service?['color'] ?? Colors.blue;
+    final icon = service?['icon'] ?? Icons.local_hospital;
 
     return Scaffold(
       appBar: AppBar(
@@ -18,11 +30,11 @@ class HospitalProfileScreen extends StatelessWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            /// HEADER CARD
+            // Header Card
             Container(
               padding: const EdgeInsets.all(20),
               decoration: BoxDecoration(
-                color: colorScheme.primary.withOpacity(0.08),
+                color: color.withOpacity(0.08),
                 borderRadius:
                     BorderRadius.circular(AppDimensions.radiusLarge),
               ),
@@ -30,15 +42,11 @@ class HospitalProfileScreen extends StatelessWidget {
                 children: [
                   Container(
                     padding: const EdgeInsets.all(18),
-                    decoration: const BoxDecoration(
-                      color: Colors.blue,
+                    decoration: BoxDecoration(
+                      color: color,
                       shape: BoxShape.circle,
                     ),
-                    child: const Icon(
-                      Icons.local_hospital,
-                      color: Colors.white,
-                      size: 30,
-                    ),
+                    child: Icon(icon, color: Colors.white, size: 30),
                   ),
                   const SizedBox(width: 16),
                   Expanded(
@@ -46,7 +54,7 @@ class HospitalProfileScreen extends StatelessWidget {
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Text(
-                          'City Care Hospital',
+                          name,
                           style: Theme.of(context)
                               .textTheme
                               .titleLarge
@@ -54,40 +62,40 @@ class HospitalProfileScreen extends StatelessWidget {
                         ),
                         const SizedBox(height: 4),
                         Text(
-                          'Hospital',
+                          type,
                           style: TextStyle(color: Colors.grey[600]),
                         ),
                       ],
                     ),
                   ),
-                  const _OpenStatus(isOpen: true),
+                  _OpenStatus(isOpen: isOpen),
                 ],
               ),
             ),
 
             const SizedBox(height: 20),
 
-            /// INFO ROW
+            // Info Row
             Row(
-              children: const [
+              children: [
                 _InfoTile(
                   icon: Icons.star,
                   label: 'Rating',
-                  value: '4.5',
+                  value: rating.toString(),
                   color: Colors.amber,
                 ),
-                SizedBox(width: 12),
+                const SizedBox(width: 12),
                 _InfoTile(
                   icon: Icons.location_on,
                   label: 'Distance',
-                  value: '1.2 km',
+                  value: distance,
                   color: Colors.redAccent,
                 ),
-                SizedBox(width: 12),
+                const SizedBox(width: 12),
                 _InfoTile(
                   icon: Icons.schedule,
                   label: 'Hours',
-                  value: '24/7',
+                  value: openHours,
                   color: Colors.green,
                 ),
               ],
@@ -95,23 +103,18 @@ class HospitalProfileScreen extends StatelessWidget {
 
             const SizedBox(height: 24),
 
-            /// CONTACT SECTION
+            // Contact Section
             _SectionTitle(title: 'যোগাযোগ'),
             const SizedBox(height: 12),
-
-            _InfoRow(
-              icon: Icons.call,
-              text: '01712-345678',
-            ),
-            const SizedBox(height: 10),
-            _InfoRow(
-              icon: Icons.location_city,
-              text: 'ধানমন্ডি, ঢাকা',
-            ),
+            if (phone.isNotEmpty)
+              _InfoRow(icon: Icons.call, text: phone),
+            if (phone.isNotEmpty) const SizedBox(height: 10),
+            if (address.isNotEmpty)
+              _InfoRow(icon: Icons.location_city, text: address),
 
             const SizedBox(height: 24),
 
-            /// ACTION BUTTONS
+            // Action Buttons
             Row(
               children: [
                 Expanded(
@@ -146,11 +149,11 @@ class HospitalProfileScreen extends StatelessWidget {
 
             const SizedBox(height: 24),
 
-            /// ABOUT SECTION
+            // About Section
             _SectionTitle(title: 'হাসপাতাল সম্পর্কে'),
             const SizedBox(height: 8),
             Text(
-              'City Care Hospital একটি আধুনিক চিকিৎসা সেবা কেন্দ্র যেখানে ২৪ ঘন্টা জরুরি সেবা, বিশেষজ্ঞ ডাক্তার এবং উন্নত ডায়াগনস্টিক সুবিধা রয়েছে।',
+              '$name একটি আধুনিক চিকিৎসা সেবা কেন্দ্র।',
               style: TextStyle(
                 color: Colors.grey[700],
                 height: 1.5,
@@ -159,7 +162,7 @@ class HospitalProfileScreen extends StatelessWidget {
 
             const SizedBox(height: 32),
 
-            /// BOOK APPOINTMENT
+            // Book Appointment
             SizedBox(
               width: double.infinity,
               child: ElevatedButton.icon(
@@ -184,8 +187,7 @@ class HospitalProfileScreen extends StatelessWidget {
   }
 }
 
-/// ---------------- COMPONENTS ----------------
-
+// Components
 class _InfoTile extends StatelessWidget {
   final IconData icon;
   final String label;
@@ -214,16 +216,11 @@ class _InfoTile extends StatelessWidget {
             const SizedBox(height: 6),
             Text(
               value,
-              style: const TextStyle(
-                fontWeight: FontWeight.bold,
-              ),
+              style: const TextStyle(fontWeight: FontWeight.bold),
             ),
             Text(
               label,
-              style: TextStyle(
-                fontSize: 12,
-                color: Colors.grey[600],
-              ),
+              style: TextStyle(fontSize: 12, color: Colors.grey[600]),
             ),
           ],
         ),
@@ -236,10 +233,7 @@ class _InfoRow extends StatelessWidget {
   final IconData icon;
   final String text;
 
-  const _InfoRow({
-    required this.icon,
-    required this.text,
-  });
+  const _InfoRow({required this.icon, required this.text});
 
   @override
   Widget build(BuildContext context) {
@@ -247,10 +241,7 @@ class _InfoRow extends StatelessWidget {
       children: [
         Icon(icon, size: 20, color: Colors.grey[600]),
         const SizedBox(width: 10),
-        Text(
-          text,
-          style: const TextStyle(fontSize: 15),
-        ),
+        Text(text, style: const TextStyle(fontSize: 15)),
       ],
     );
   }
@@ -258,7 +249,6 @@ class _InfoRow extends StatelessWidget {
 
 class _SectionTitle extends StatelessWidget {
   final String title;
-
   const _SectionTitle({required this.title});
 
   @override
