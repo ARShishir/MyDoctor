@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
@@ -12,35 +13,103 @@ class NotificationScreen extends StatefulWidget {
 }
 
 class _NotificationScreenState extends State<NotificationScreen> {
-  final List<Map<String, dynamic>> _notifications = [
+  List<Map<String, dynamic>> _notifications = [
     {
+      'id': 1,
       'title': 'ঔষধ নেওয়ার সময় হয়েছে',
       'message': 'সকাল ৮:০০ টায় Napa 500mg নেওয়ার সময় হয়েছে।',
-      'minutesAgo': 1,
+      'date': DateTime.now().subtract(const Duration(minutes: 10)),
       'read': false,
       'icon': Icons.medication_outlined,
+      'type': 'medicine',
     },
     {
+      'id': 2,
       'title': 'ডাক্তারের অ্যাপয়েন্টমেন্ট',
       'message': 'আজ বিকাল ৪:০০ টায় ডা. রহমানের সাথে অ্যাপয়েন্টমেন্ট আছে।',
-      'minutesAgo': 20,
+      'date': DateTime.now().subtract(const Duration(hours: 2)),
       'read': false,
       'icon': Icons.calendar_month_outlined,
+      'type': 'appointment',
     },
     {
+      'id': 3,
       'title': 'ঔষধ সম্পন্ন',
       'message': 'আপনি আজকের সব ঔষধ সময়মতো নিয়েছেন।',
-      'minutesAgo': 1440,
+      'date': DateTime.now().subtract(const Duration(days: 1)),
       'read': true,
       'icon': Icons.check_circle_outline,
+      'type': 'success',
     },
   ];
+
+  Timer? _timer;
+  int _nextNotificationId = 4;
+
+  @override
+  void initState() {
+    super.initState();
+    // প্রতি 1 মিনিট পর নতুন notification add হবে
+    _timer = Timer.periodic(const Duration(minutes: 1), (timer) {
+      _addAutoNotification();
+    });
+  }
+
+  @override
+  void dispose() {
+    _timer?.cancel();
+    super.dispose();
+  }
+
+  void _addAutoNotification() {
+    final now = DateTime.now();
+    setState(() {
+      _notifications.insert(0, {
+        'id': _nextNotificationId++,
+        'title': 'নতুন আপডেট',
+        'message': 'নতুন notification ${_nextNotificationId - 1}',
+        'date': now,
+        'read': false,
+        'icon': Icons.notifications,
+        'type': 'auto',
+      });
+    });
+
+    // Optional: Haptic feedback when new notification arrives
+    HapticFeedback.mediumImpact();
+  }
 
   @override
   Widget build(BuildContext context) {
     final colorScheme = Theme.of(context).colorScheme;
-    final unreadCount =
-        _notifications.where((e) => e['read'] == false).length;
+
+    // Group notifications by date
+    final today = DateTime.now();
+    final yesterday = today.subtract(const Duration(days: 1));
+
+    final todayNotifications = _notifications
+        .where((n) =>
+            n['date'].year == today.year &&
+            n['date'].month == today.month &&
+            n['date'].day == today.day)
+        .toList();
+
+    final yesterdayNotifications = _notifications
+        .where((n) =>
+            n['date'].year == yesterday.year &&
+            n['date'].month == yesterday.month &&
+            n['date'].day == yesterday.day)
+        .toList();
+
+    final olderNotifications = _notifications
+        .where((n) =>
+            n['date'].isBefore(yesterday) &&
+            !(n['date'].year == yesterday.year &&
+                n['date'].month == yesterday.month &&
+                n['date'].day == yesterday.day))
+        .toList();
+
+    final hasData = _notifications.isNotEmpty;
 
     return WillPopScope(
       onWillPop: () async {
@@ -58,37 +127,55 @@ class _NotificationScreenState extends State<NotificationScreen> {
             onPressed: () => _goHome(context),
           ),
           actions: [
-            if (unreadCount > 0)
+            if (_notifications.any((n) => !n['read']))
               TextButton(
-                onPressed: _markAllAsRead,
-                child: const Text('Mark all'),
-              ),
+                  onPressed: _markAllAsRead, child: const Text('Mark all'))
           ],
         ),
-        body: _notifications.isEmpty
-            ? const _EmptyState()
-            : ListView.builder(
+        body: hasData
+            ? ListView(
                 padding: const EdgeInsets.all(16),
-                itemCount: _notifications.length,
-                itemBuilder: (context, index) {
-                  final item = _notifications[index];
-                  return _NotificationCard(
-                    data: item,
-                    timeText: _formatTime(item['minutesAgo']),
-                    onTap: () {
-                      HapticFeedback.selectionClick();
-                      setState(() {
-                        _notifications[index]['read'] = true;
-                      });
-                    },
-                  );
-                },
-              ),
+                children: [
+                  if (todayNotifications.isNotEmpty)
+                    _buildSection('Today', todayNotifications),
+                  if (yesterdayNotifications.isNotEmpty)
+                    _buildSection('Yesterday', yesterdayNotifications),
+                  if (olderNotifications.isNotEmpty)
+                    _buildSection('Older', olderNotifications),
+                ],
+              )
+            : const _EmptyState(),
       ),
     );
   }
 
-  // 🔁 ALWAYS GO TO DASHBOARD
+  Widget _buildSection(String title, List<Map<String, dynamic>> notifications) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(title,
+            style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+        const SizedBox(height: 8),
+        ...notifications.map((n) => _DismissibleNotificationCard(
+              key: ValueKey(n['id']),
+              data: n,
+              onTap: () {
+                HapticFeedback.selectionClick();
+                setState(() {
+                  n['read'] = true;
+                });
+              },
+              onDelete: () {
+                setState(() {
+                  _notifications.removeWhere((e) => e['id'] == n['id']);
+                });
+              },
+            )),
+        const SizedBox(height: 16),
+      ],
+    );
+  }
+
   void _goHome(BuildContext context) {
     Navigator.of(context).pushAndRemoveUntil(
       MaterialPageRoute(builder: (_) => const UserDashboardScreen()),
@@ -103,25 +190,19 @@ class _NotificationScreenState extends State<NotificationScreen> {
       }
     });
   }
-
-  String _formatTime(int minutes) {
-    if (minutes < 60) return '$minutes min ago';
-    if (minutes < 1440) return '${minutes ~/ 60} hr ago';
-    return '${minutes ~/ 1440} day ago';
-  }
 }
 
-/// ---------------- CARD ----------------
-
-class _NotificationCard extends StatelessWidget {
+/// ---------------- Dismissible Notification Card ----------------
+class _DismissibleNotificationCard extends StatelessWidget {
   final Map<String, dynamic> data;
-  final String timeText;
   final VoidCallback onTap;
+  final VoidCallback onDelete;
 
-  const _NotificationCard({
+  const _DismissibleNotificationCard({
+    required super.key,
     required this.data,
-    required this.timeText,
     required this.onTap,
+    required this.onDelete,
   });
 
   @override
@@ -129,96 +210,106 @@ class _NotificationCard extends StatelessWidget {
     final bool isRead = data['read'];
     final colorScheme = Theme.of(context).colorScheme;
 
-    return Opacity(
-      opacity: isRead ? 0.55 : 1,
-      child: Card(
-        elevation: isRead ? 1 : 4,
-        margin: const EdgeInsets.only(bottom: 14),
-        shape: RoundedRectangleBorder(
+    return Dismissible(
+      key: ValueKey(data['id']),
+      direction: DismissDirection.endToStart,
+      background: Container(
+        alignment: Alignment.centerRight,
+        padding: const EdgeInsets.only(right: 20),
+        decoration: BoxDecoration(
+          color: Colors.redAccent,
           borderRadius: BorderRadius.circular(18),
         ),
-        child: InkWell(
-          borderRadius: BorderRadius.circular(18),
-          onTap: onTap,
-          child: Padding(
-            padding: const EdgeInsets.all(16),
-            child: Row(
-              children: [
-                Container(
-                  width: 52,
-                  height: 52,
-                  decoration: BoxDecoration(
-                    color: colorScheme.primary.withOpacity(0.15),
-                    borderRadius: BorderRadius.circular(14),
+        child: const Icon(Icons.delete, color: Colors.white),
+      ),
+      onDismissed: (direction) => onDelete(),
+      child: Opacity(
+        opacity: isRead ? 0.6 : 1,
+        child: Card(
+          elevation: isRead ? 1 : 4,
+          margin: const EdgeInsets.only(bottom: 12),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(18),
+          ),
+          child: InkWell(
+            borderRadius: BorderRadius.circular(18),
+            onTap: onTap,
+            child: Padding(
+              padding: const EdgeInsets.all(16),
+              child: Row(
+                children: [
+                  Container(
+                    width: 52,
+                    height: 52,
+                    decoration: BoxDecoration(
+                      color: colorScheme.primary.withOpacity(0.15),
+                      borderRadius: BorderRadius.circular(14),
+                    ),
+                    child: Icon(data['icon'], color: colorScheme.primary),
                   ),
-                  child: Icon(
-                    data['icon'],
-                    color: colorScheme.primary,
-                  ),
-                ),
-                const SizedBox(width: 16),
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Row(
-                        children: [
-                          Expanded(
-                            child: Text(
-                              data['title'],
-                              style: TextStyle(
-                                fontSize: 16,
-                                fontWeight:
-                                    isRead ? FontWeight.w500 : FontWeight.w700,
+                  const SizedBox(width: 16),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Row(
+                          children: [
+                            Expanded(
+                              child: Text(
+                                data['title'],
+                                style: TextStyle(
+                                  fontSize: 16,
+                                  fontWeight: isRead
+                                      ? FontWeight.w500
+                                      : FontWeight.w700,
+                                ),
                               ),
                             ),
-                          ),
-                          if (!isRead)
-                            Container(
-                              width: 8,
-                              height: 8,
-                              decoration: BoxDecoration(
-                                color: colorScheme.primary,
-                                shape: BoxShape.circle,
+                            if (!isRead)
+                              Container(
+                                width: 8,
+                                height: 8,
+                                decoration: BoxDecoration(
+                                  color: colorScheme.primary,
+                                  shape: BoxShape.circle,
+                                ),
                               ),
-                            ),
-                        ],
-                      ),
-                      const SizedBox(height: 6),
-                      Text(
-                        data['message'],
-                        style: TextStyle(
-                          color: Colors.grey[700],
-                          height: 1.4,
+                          ],
                         ),
-                      ),
-                      const SizedBox(height: 10),
-                      Row(
-                        children: [
-                          const Icon(Icons.access_time,
-                              size: 14, color: Colors.grey),
-                          const SizedBox(width: 4),
-                          Text(
-                            isRead ? 'Seen $timeText' : 'Received $timeText',
-                            style: const TextStyle(
-                                fontSize: 12, color: Colors.grey),
-                          ),
-                        ],
-                      ),
-                    ],
+                        const SizedBox(height: 6),
+                        Text(
+                          data['message'],
+                          style: TextStyle(
+                              color: Colors.grey[700], height: 1.4),
+                        ),
+                        const SizedBox(height: 10),
+                        Text(
+                          _formatTimeSince(data['date']),
+                          style: const TextStyle(fontSize: 12, color: Colors.grey),
+                        ),
+                      ],
+                    ),
                   ),
-                ),
-              ],
+                ],
+              ),
             ),
           ),
         ),
       ),
     );
   }
+
+  String _formatTimeSince(DateTime date) {
+    final now = DateTime.now();
+    final difference = now.difference(date);
+
+    if (difference.inMinutes < 60) return '${difference.inMinutes} min ago';
+    if (difference.inHours < 24) return '${difference.inHours} hr ago';
+    return '${difference.inDays} day ago';
+  }
 }
 
 /// ---------------- EMPTY ----------------
-
 class _EmptyState extends StatelessWidget {
   const _EmptyState();
 
