@@ -77,7 +77,7 @@ class NearbyServicesScreen extends StatelessWidget {
                       prefixIcon: const Icon(Icons.search),
                       filled: true,
                       fillColor:
-                          colorScheme.surfaceVariant.withOpacity(0.4),
+                          colorScheme.surfaceContainerHighest.withOpacity(0.4),
                       border: OutlineInputBorder(
                         borderRadius:
                             BorderRadius.circular(AppDimensions.radiusLarge),

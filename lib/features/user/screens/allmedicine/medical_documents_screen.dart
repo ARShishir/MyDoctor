@@ -1,10 +1,16 @@
+import 'dart:io';
+
 import 'package:flutter/material.dart';
+import 'package:file_picker/file_picker.dart';
+import 'package:open_filex/open_filex.dart';
+
 import '../../../../../core/constants/app_dimensions.dart';
 import '../../widgets/document_card.dart';
 import '../../widgets/empty_state_widget.dart';
-// import '../widgets/prescription_card.dart'; // যদি আলাদা কার্ড ব্যবহার করতে চাও
 
-// নতুন ডিটেইল স্ক্রিন (যেখানে ডকুমেন্টের পুরো বিস্তারিত দেখাবে)
+/// ===============================
+/// DOCUMENT DETAIL SCREEN
+/// ===============================
 class DocumentDetailScreen extends StatelessWidget {
   final Map<String, dynamic> document;
 
@@ -12,176 +18,237 @@ class DocumentDetailScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final color = document['color'] as Color;
+    final Color color = document['color'];
+    final String? filePath = document['filePath'];
 
     return Scaffold(
       appBar: AppBar(
         title: Text(document['title']),
         centerTitle: true,
       ),
-      body: SingleChildScrollView(
+      body: Padding(
         padding: const EdgeInsets.all(20),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            // বড় প্রিভিউ কার্ড
-            Container(
-              width: double.infinity,
-              padding: const EdgeInsets.all(24),
-              decoration: BoxDecoration(
-                color: Theme.of(context).cardColor,
-                borderRadius: BorderRadius.circular(24),
-                border: Border.all(color: color.withOpacity(0.4), width: 1.5),
-                boxShadow: [
-                  BoxShadow(
-                    color: Colors.black.withOpacity(0.08),
-                    blurRadius: 20,
-                    offset: const Offset(0, 8),
-                  ),
-                ],
+        child: Container(
+          width: double.infinity,
+          padding: const EdgeInsets.all(24),
+          decoration: BoxDecoration(
+            color: Theme.of(context).cardColor,
+            borderRadius: BorderRadius.circular(24),
+            border: Border.all(color: color.withOpacity(0.4)),
+          ),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                document['title'],
+                style: Theme.of(context)
+                    .textTheme
+                    .headlineSmall
+                    ?.copyWith(fontWeight: FontWeight.bold),
               ),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Row(
-                    children: [
-                      Icon(Icons.description_rounded, color: color, size: 36),
-                      const SizedBox(width: 16),
-                      Expanded(
-                        child: Text(
-                          document['type'],
-                          style: TextStyle(
-                            fontSize: 22,
-                            fontWeight: FontWeight.bold,
-                            color: color,
-                          ),
-                        ),
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 20),
-                  Text(
-                    document['title'],
-                    style: Theme.of(context).textTheme.headlineSmall?.copyWith(
-                          fontWeight: FontWeight.w700,
-                        ),
-                  ),
-                  const SizedBox(height: 16),
-                  Row(
-                    children: [
-                      Icon(Icons.calendar_today, size: 18, color: Colors.grey[700]),
-                      const SizedBox(width: 8),
-                      Text(document['date'], style: const TextStyle(fontSize: 15)),
-                    ],
-                  ),
-                  const SizedBox(height: 8),
-                  Row(
-                    children: [
-                      Icon(Icons.file_present, size: 18, color: Colors.grey[700]),
-                      const SizedBox(width: 8),
-                      Text("ফাইল টাইপ: ${document['fileType']}"),
-                    ],
-                  ),
-                ],
-              ),
-            ),
+              const SizedBox(height: 12),
+              Text("টাইপ: ${document['type']}"),
+              Text("তারিখ: ${document['date']}"),
+              Text("ফাইল টাইপ: ${document['fileType']}"),
+              const Spacer(),
 
-            const SizedBox(height: 32),
+              /// OPEN FILE BUTTON
+              SizedBox(
+                width: double.infinity,
+                child: ElevatedButton.icon(
+                  icon: const Icon(Icons.open_in_new),
+                  label: const Text('ফাইল দেখুন / খুলুন'),
+                  onPressed: () async {
+                    if (filePath == null) {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        const SnackBar(
+                          content: Text('এই ডকুমেন্টে কোনো ফাইল নেই'),
+                        ),
+                      );
+                      return;
+                    }
 
-            // অ্যাকশন বাটনসমূহ
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-              children: [
-                ElevatedButton.icon(
-                  icon: const Icon(Icons.download_rounded),
-                  label: const Text('ডাউনলোড'),
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: color,
-                    foregroundColor: Colors.white,
-                    padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
-                  ),
-                  onPressed: () {
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(content: Text('ডাউনলোড শুরু হয়েছে...')),
-                    );
+                    final file = File(filePath);
+                    if (!file.existsSync()) {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        const SnackBar(
+                          content: Text('ফাইলটি পাওয়া যায়নি'),
+                        ),
+                      );
+                      return;
+                    }
+
+                    final result = await OpenFilex.open(filePath);
+
+                    if (result.type != ResultType.done) {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        SnackBar(
+                          content:
+                              Text('ফাইল খোলা যায়নি: ${result.message}'),
+                        ),
+                      );
+                    }
                   },
                 ),
-                OutlinedButton.icon(
-                  icon: const Icon(Icons.share_rounded),
-                  label: const Text('শেয়ার'),
-                  style: OutlinedButton.styleFrom(
-                    foregroundColor: color,
-                    side: BorderSide(color: color),
-                    padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
-                  ),
-                  onPressed: () {
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(content: Text('শেয়ার ফিচার শীঘ্রই আসছে')),
-                    );
-                  },
-                ),
-              ],
-            ),
-          ],
+              ),
+            ],
+          ),
         ),
       ),
     );
   }
 }
 
-// মূল স্ক্রিন
-class MedicalDocumentsScreen extends StatelessWidget {
+/// ===============================
+/// ADD DOCUMENT DIALOG
+/// ===============================
+class AddDocumentDialog extends StatefulWidget {
+  const AddDocumentDialog({super.key});
+
+  @override
+  State<AddDocumentDialog> createState() => _AddDocumentDialogState();
+}
+
+class _AddDocumentDialogState extends State<AddDocumentDialog> {
+  final _titleController = TextEditingController();
+  final _typeController = TextEditingController();
+  final _dateController = TextEditingController();
+
+  Color _selectedColor = Colors.blue;
+  PlatformFile? _selectedFile;
+
+  Future<void> _pickFile() async {
+    final result = await FilePicker.platform.pickFiles(
+      type: FileType.custom,
+      allowedExtensions: ['pdf', 'jpg', 'png'],
+    );
+
+    if (result != null) {
+      setState(() {
+        _selectedFile = result.files.first;
+      });
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return AlertDialog(
+      title: const Text('নতুন ডকুমেন্ট যোগ করুন'),
+      content: SingleChildScrollView(
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            TextField(
+              controller: _titleController,
+              decoration: const InputDecoration(labelText: 'ডকুমেন্ট নাম'),
+            ),
+            const SizedBox(height: 12),
+            TextField(
+              controller: _typeController,
+              decoration: const InputDecoration(labelText: 'টাইপ'),
+            ),
+            const SizedBox(height: 12),
+            TextField(
+              controller: _dateController,
+              decoration: const InputDecoration(labelText: 'তারিখ'),
+            ),
+            const SizedBox(height: 16),
+
+            OutlinedButton.icon(
+              onPressed: _pickFile,
+              icon: const Icon(Icons.upload_file),
+              label: const Text('ফাইল নির্বাচন করুন'),
+            ),
+
+            if (_selectedFile != null) ...[
+              const SizedBox(height: 8),
+              Text(
+                'Selected: ${_selectedFile!.name}',
+                style: const TextStyle(fontSize: 13),
+              ),
+            ],
+
+            const SizedBox(height: 16),
+
+            DropdownButtonFormField<Color>(
+              value: _selectedColor,
+              decoration:
+                  const InputDecoration(labelText: 'কালার নির্বাচন করুন'),
+              items: const [
+                DropdownMenuItem(value: Colors.blue, child: Text('Blue')),
+                DropdownMenuItem(
+                    value: Colors.redAccent, child: Text('Red')),
+                DropdownMenuItem(value: Colors.green, child: Text('Green')),
+                DropdownMenuItem(
+                    value: Colors.purple, child: Text('Purple')),
+              ],
+              onChanged: (value) {
+                setState(() {
+                  _selectedColor = value!;
+                });
+              },
+            ),
+          ],
+        ),
+      ),
+      actions: [
+        TextButton(
+          onPressed: () => Navigator.pop(context),
+          child: const Text('বাতিল'),
+        ),
+        ElevatedButton(
+          onPressed: () {
+            if (_titleController.text.isEmpty || _selectedFile == null) {
+              ScaffoldMessenger.of(context).showSnackBar(
+                const SnackBar(content: Text('সব তথ্য পূরণ করুন')),
+              );
+              return;
+            }
+
+            Navigator.pop(context, {
+              'title': _titleController.text,
+              'type': _typeController.text,
+              'date': _dateController.text,
+              'fileType':
+                  _selectedFile!.extension?.toUpperCase() ?? '',
+              'filePath': _selectedFile!.path,
+              'color': _selectedColor,
+            });
+          },
+          child: const Text('সংরক্ষণ'),
+        ),
+      ],
+    );
+  }
+}
+
+/// ===============================
+/// MAIN MEDICAL DOCUMENT SCREEN
+/// ===============================
+class MedicalDocumentsScreen extends StatefulWidget {
   const MedicalDocumentsScreen({super.key});
 
-  // ডামি ডাটা
-  final List<Map<String, dynamic>> _dummyDocuments = const [
-    {
-      'title': 'Blood Test Report',
-      'date': '১৫ জানুয়ারি ২০২৬',
-      'type': 'Lab Report',
-      'fileType': 'PDF',
-      'color': Colors.blue,
-    },
-    {
-      'title': 'Chest X-Ray',
-      'date': '০৮ জানুয়ারি ২০২৬',
-      'type': 'Imaging',
-      'fileType': 'JPG',
-      'color': Colors.redAccent,
-    },
-    {
-      'title': 'Doctor Prescription - ঠান্ডা-জ্বর',
-      'date': '০৫ জানুয়ারি ২০২৬',
-      'type': 'Prescription',
-      'fileType': 'PNG',
-      'color': Colors.green,
-    },
-    {
-      'title': 'ECG Report',
-      'date': '২৮ ডিসেম্বর ২০২৫',
-      'type': 'Cardiology',
-      'fileType': 'PDF',
-      'color': Colors.purple,
-    },
-  ];
+  @override
+  State<MedicalDocumentsScreen> createState() =>
+      _MedicalDocumentsScreenState();
+}
+
+class _MedicalDocumentsScreenState extends State<MedicalDocumentsScreen> {
+  /// ⚠️ EMPTY INIT (only real uploaded files)
+  final List<Map<String, dynamic>> _documents = [];
 
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final colorScheme = theme.colorScheme;
 
-    final hasDocuments = _dummyDocuments.isNotEmpty;
-
     return Scaffold(
       appBar: AppBar(
         title: const Text('মেডিকেল ডকুমেন্ট'),
         centerTitle: true,
-        elevation: 0,
       ),
-
       body: Column(
         children: [
-          // সার্চ + ফিল্টার
           Padding(
             padding: const EdgeInsets.all(AppDimensions.paddingMedium),
             child: Row(
@@ -192,11 +259,13 @@ class MedicalDocumentsScreen extends StatelessWidget {
                       hintText: 'ডকুমেন্ট খুঁজুন...',
                       prefixIcon: const Icon(Icons.search),
                       border: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(AppDimensions.radiusLarge),
+                        borderRadius:
+                            BorderRadius.circular(AppDimensions.radiusLarge),
                         borderSide: BorderSide.none,
                       ),
                       filled: true,
-                      fillColor: colorScheme.surfaceVariant.withOpacity(0.4),
+                      fillColor:
+                          colorScheme.surfaceVariant.withOpacity(0.4),
                     ),
                   ),
                 ),
@@ -210,14 +279,13 @@ class MedicalDocumentsScreen extends StatelessWidget {
           ),
 
           Expanded(
-            child: hasDocuments
+            child: _documents.isNotEmpty
                 ? ListView.builder(
                     padding: const EdgeInsets.symmetric(
-                      horizontal: AppDimensions.paddingMedium,
-                    ),
-                    itemCount: _dummyDocuments.length,
+                        horizontal: AppDimensions.paddingMedium),
+                    itemCount: _documents.length,
                     itemBuilder: (context, index) {
-                      final doc = _dummyDocuments[index];
+                      final doc = _documents[index];
                       return DocumentCard(
                         title: doc['title'],
                         date: doc['date'],
@@ -225,11 +293,11 @@ class MedicalDocumentsScreen extends StatelessWidget {
                         fileType: doc['fileType'],
                         color: doc['color'],
                         onTap: () {
-                          // এখানে ডিটেইল স্ক্রিনে নেয়া হচ্ছে
                           Navigator.push(
                             context,
                             MaterialPageRoute(
-                              builder: (_) => DocumentDetailScreen(document: doc),
+                              builder: (_) =>
+                                  DocumentDetailScreen(document: doc),
                             ),
                           );
                         },
@@ -247,13 +315,20 @@ class MedicalDocumentsScreen extends StatelessWidget {
 
       floatingActionButton: FloatingActionButton.extended(
         heroTag: 'add_document',
-        onPressed: () {
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('নতুন ডকুমেন্ট আপলোড করার সুবিধা শীঘ্রই আসছে')),
-          );
-        },
         icon: const Icon(Icons.add),
         label: const Text('নতুন ডকুমেন্ট'),
+        onPressed: () async {
+          final result = await showDialog<Map<String, dynamic>>(
+            context: context,
+            builder: (_) => const AddDocumentDialog(),
+          );
+
+          if (result != null) {
+            setState(() {
+              _documents.add(result);
+            });
+          }
+        },
       ),
     );
   }
