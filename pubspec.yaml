@@ -5,7 +5,7 @@ publish_to: 'none'
 version: 1.0.0+1
 
 environment:
-  sdk: ^3.10.4
+  sdk: ">=3.10.4 <4.0.0"
 
 dependencies:
   flutter:
@@ -20,15 +20,11 @@ dependencies:
   url_launcher: ^6.3.2
   typed_data: ^1.4.0
   open_filex: ^4.4.0
-  
+
 dev_dependencies:
   flutter_test:
     sdk: flutter
-    intl: ^0.19.0
-    flutter_lints: ^6.0.0
-
-
-
+  flutter_lints: ^6.0.0
 
 flutter:
   uses-material-design: true
