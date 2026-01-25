@@ -1,21 +1,45 @@
 // ignore_for_file: deprecated_member_use
 
 import 'package:flutter/material.dart';
-import '../screens/user_profile_screen.dart'; // পাথ ঠিক রাখো
+import '../screens/user_profile_screen.dart';
+import '../../../backend/supabase/supabase_client.dart';
 
-class UserHeader extends StatelessWidget {
+class UserHeader extends StatefulWidget {
   const UserHeader({super.key});
 
   @override
+  State<UserHeader> createState() => _UserHeaderState();
+}
+
+class _UserHeaderState extends State<UserHeader> {
+  String _userName = 'Guest';
+  String _profileImageUrl = '';
+
+  @override
+  void initState() {
+    super.initState();
+    _loadProfile();
+  }
+
+  Future<void> _loadProfile() async {
+    final client = getSupabaseClient();
+    final user = client.auth.currentUser;
+    if (user == null) return;
+    try {
+      final res = await client.from('profiles').select().eq('id', user.id).maybeSingle();
+      if (res is Map<String, dynamic>) {
+        setState(() {
+          _userName = (res['name'] ?? user.email ?? 'User').toString();
+          _profileImageUrl = (res['avatar_url'] ?? '').toString();
+        });
+      }
+    } catch (_) {
+      // ignore
+    }
+  }
+
+  @override
   Widget build(BuildContext context) {
-    const String userName = "আব্দুর রহমান";
-
-    // Instagram URL → অনেক সময় ডিরেক্ট লোড হয় না, তাই টেস্টের জন্য একটা পাবলিক URL দিলাম
-    // পরে auth থেকে আসা ছবি ব্যবহার করবে
-    const String profileImageUrl =
-        "https://avatars.githubusercontent.com/u/136100734?v=4";
-
-
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
       child: GestureDetector(
@@ -51,12 +75,11 @@ class UserHeader extends StatelessWidget {
                 padding: const EdgeInsets.all(18),
                 child: Row(
                   children: [
-                    // Profile Picture - সহজ ও নির্ভরযোগ্য স্টাইল
                     CircleAvatar(
                       radius: 36,
                       backgroundColor: Theme.of(context).colorScheme.primaryContainer,
-                      backgroundImage: NetworkImage(profileImageUrl),
-                      child: profileImageUrl.isEmpty
+                      backgroundImage: _profileImageUrl.isNotEmpty ? NetworkImage(_profileImageUrl) : null,
+                      child: _profileImageUrl.isEmpty
                           ? Icon(Icons.person, size: 40, color: Theme.of(context).colorScheme.primary)
                           : null,
                     ),
@@ -68,7 +91,7 @@ class UserHeader extends StatelessWidget {
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           Text(
-                            'হ্যালো, $userName 👋',
+                            'হ্যালো, $_userName 👋',
                             style: Theme.of(context).textTheme.titleLarge?.copyWith(
                                   fontWeight: FontWeight.w700,
                                   letterSpacing: -0.3,

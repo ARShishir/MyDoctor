@@ -2,6 +2,7 @@
 
 import 'package:flutter/material.dart';
 import '../../../../core/constants/app_dimensions.dart';
+import '../../../backend/supabase/repository.dart';
 import 'pharmacy_profile_screen.dart';
 
 class LocalPharmacyScreen extends StatefulWidget {
@@ -12,52 +13,35 @@ class LocalPharmacyScreen extends StatefulWidget {
 }
 
 class _LocalPharmacyScreenState extends State<LocalPharmacyScreen> {
-  final List<Map<String, dynamic>> _pharmacies = [
-    {
-      'name': 'Green Life Pharmacy',
-      'distance': '300 m',
-      'rating': 4.6,
-      'isOpen': true,
-      'phone': '01234-567890',
-      'address': 'ধানমন্ডি, ঢাকা',
-      'openHours': '24/7',
-      'color': Colors.green,
-      'type': 'Pharmacy',
-    },
-    {
-      'name': 'City Medico',
-      'distance': '750 m',
-      'rating': 4.2,
-      'isOpen': true,
-      'phone': '01700-111222',
-      'address': 'মিরপুর, ঢাকা',
-      'openHours': '8 AM - 11 PM',
-      'color': Colors.teal,
-      'type': 'Pharmacy',
-    },
-    {
-      'name': 'Care Plus Pharmacy',
-      'distance': '1.4 km',
-      'rating': 4.0,
-      'isOpen': false,
-      'phone': '01888-999000',
-      'address': 'উত্তরা, ঢাকা',
-      'openHours': '9 AM - 10 PM',
-      'color': Colors.blue,
-      'type': 'Pharmacy',
-    },
-    {
-      'name': 'Health Mart',
-      'distance': '2.0 km',
-      'rating': 4.8,
-      'isOpen': true,
-      'phone': '01999-333444',
-      'address': 'গুলশান, ঢাকা',
-      'openHours': '24/7',
-      'color': Colors.greenAccent,
-      'type': 'Pharmacy',
-    },
-  ];
+  List<Map<String, dynamic>> _pharmacies = [];
+  bool _loading = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadPharmacies();
+  }
+
+  Future<void> _loadPharmacies() async {
+    setState(() => _loading = true);
+    try {
+      final items = await SupabaseRepository.fetchServices(type: 'Pharmacy');
+      final mapped = items.map((e) => {
+            'id': e['id'],
+            'name': e['name'],
+            'type': e['type'],
+            'distance': e['distance'],
+            'rating': e['rating'],
+            'isOpen': e['is_open'] ?? true,
+            'color': e['color'],
+            'phone': e['phone'],
+            'address': e['address'],
+            'openHours': e['open_hours'],
+          }).toList();
+      setState(() => _pharmacies = mapped);
+    } catch (_) {}
+    setState(() => _loading = false);
+  }
 
   String _searchQuery = '';
 
@@ -116,8 +100,10 @@ class _LocalPharmacyScreenState extends State<LocalPharmacyScreen> {
 
           // Pharmacies List or Empty State
           Expanded(
-            child: filteredPharmacies.isNotEmpty
-                ? ListView.builder(
+            child: _loading
+                ? const Center(child: CircularProgressIndicator())
+                : filteredPharmacies.isNotEmpty
+                    ? ListView.builder(
                     padding: const EdgeInsets.symmetric(
                         horizontal: AppDimensions.paddingMedium),
                     itemCount: filteredPharmacies.length,
@@ -166,7 +152,7 @@ class _LocalPharmacyScreenState extends State<LocalPharmacyScreen> {
           ),
         ],
       ),
-      floatingActionButton: FloatingActionButton.extended(
+        floatingActionButton: FloatingActionButton.extended(
         heroTag: 'add pharmacy',
         icon: const Icon(Icons.add),
         label: const Text('নতুন ফার্মেসি'),
@@ -216,25 +202,27 @@ class _LocalPharmacyScreenState extends State<LocalPharmacyScreen> {
           TextButton(
               onPressed: () => Navigator.pop(context), child: const Text('বাতিল')),
           ElevatedButton(
-              onPressed: () {
+              onPressed: () async {
                 if (nameController.text.isNotEmpty) {
-                  setState(() {
-                    _pharmacies.add({
-                      'name': nameController.text,
-                      'type': 'Pharmacy',
-                      'distance': distanceController.text.isNotEmpty
-                          ? distanceController.text
-                          : '0 km',
-                      'rating': 0.0,
-                      'isOpen': true,
-                      'color': Colors.green,
-                      'phone': phoneController.text,
-                      'address': addressController.text,
-                      'openHours': openHoursController.text.isNotEmpty
-                          ? openHoursController.text
-                          : '24/7',
-                    });
-                  });
+                  final payload = {
+                    'name': nameController.text,
+                    'type': 'Pharmacy',
+                    'distance': distanceController.text.isNotEmpty
+                        ? distanceController.text
+                        : '0 km',
+                    'rating': 0.0,
+                    'is_open': true,
+                    'color': '#FF4CAF50',
+                    'phone': phoneController.text,
+                    'address': addressController.text,
+                    'open_hours': openHoursController.text.isNotEmpty
+                        ? openHoursController.text
+                        : '24/7',
+                  };
+                  try {
+                    await SupabaseRepository.addService(payload);
+                    await _loadPharmacies();
+                  } catch (_) {}
                   Navigator.pop(context);
                 }
               },
@@ -251,7 +239,18 @@ class _PharmacyCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final color = pharmacy['color'] as Color;
+    Color _parseColor(dynamic v) {
+      if (v is int) return Color(v);
+      if (v is String) {
+        final s = v.replaceFirst('#', '');
+        try {
+          return Color(int.parse('0x$s'));
+        } catch (_) {}
+      }
+      return Colors.green;
+    }
+
+    final color = _parseColor(pharmacy['color']);
 
     return Container(
       margin: const EdgeInsets.only(bottom: 16),

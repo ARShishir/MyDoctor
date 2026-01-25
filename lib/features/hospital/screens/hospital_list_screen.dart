@@ -1,7 +1,8 @@
-// ignore_for_file: deprecated_member_use
+// ignore_for_file: deprecated_member_use, use_build_context_synchronously, no_leading_underscores_for_local_identifiers
 
 import 'package:flutter/material.dart';
 import '../../../../core/constants/app_dimensions.dart';
+import '../../../backend/supabase/repository.dart';
 import '../../hospital/screens/hospital_profile_screen.dart';
 
 class NearbyServicesScreen extends StatefulWidget {
@@ -12,92 +13,38 @@ class NearbyServicesScreen extends StatefulWidget {
 }
 
 class _NearbyServicesScreenState extends State<NearbyServicesScreen> {
-  final List<Map<String, dynamic>> _services = [
-    {
-      'name': 'City Care Hospital',
-      'type': 'Hospital',
-      'distance': '1.2 km',
-      'rating': 4.5,
-      'isOpen': true,
-      'color': Colors.blue,
-      'icon': Icons.local_hospital,
-      'phone': '01712-345678',
-      'address': 'ধানমন্ডি, ঢাকা',
-      'openHours': '24/7',
-    },
-    {
-      'name': 'Lifeline Diagnostic Center',
-      'type': 'Diagnostic',
-      'distance': '800 m',
-      'rating': 4.2,
-      'isOpen': true,
-      'color': Colors.purple,
-      'icon': Icons.biotech,
-      'phone': '01712-987654',
-      'address': 'মিরপুর, ঢাকা',
-      'openHours': '8 AM - 10 PM',
-    },
-    {
-      'name': 'Green Pharmacy',
-      'type': 'Pharmacy',
-      'distance': '500 m',
-      'rating': 4.6,
-      'isOpen': true,
-      'color': Colors.green,
-      'icon': Icons.local_pharmacy,
-      'phone': '01712-111222',
-      'address': 'বনানী, ঢাকা',
-      'openHours': '8 AM - 11 PM',
-    },
-    {
-      'name': 'Health Plus Clinic',
-      'type': 'Clinic',
-      'distance': '2.1 km',
-      'rating': 4.7,
-      'isOpen': true,
-      'color': Colors.orange,
-      'icon': Icons.medical_services,
-      'phone': '01712-333444',
-      'address': 'উত্তরা, ঢাকা',
-      'openHours': '9 AM - 10 PM',
-    },
-    {
-      'name': 'Sunrise Hospital',
-      'type': 'Hospital',
-      'distance': '3.5 km',
-      'rating': 4.4,
-      'isOpen': false,
-      'color': Colors.red,
-      'icon': Icons.local_hospital,
-      'phone': '01712-555666',
-      'address': 'নির্বাণ, ঢাকা',
-      'openHours': '24/7',
-    },
-    {
-      'name': 'Care Diagnostics',
-      'type': 'Diagnostic',
-      'distance': '1.5 km',
-      'rating': 4.3,
-      'isOpen': true,
-      'color': Colors.indigo,
-      'icon': Icons.biotech,
-      'phone': '01712-777888',
-      'address': 'গুলশান, ঢাকা',
-      'openHours': '8 AM - 8 PM',
-    },
-    {
-      'name': 'Healthy Pharmacy',
-      'type': 'Pharmacy',
-      'distance': '2 km',
-      'rating': 4.1,
-      'isOpen': true,
-      'color': Colors.teal,
-      'icon': Icons.local_pharmacy,
-      'phone': '01712-999000',
-      'address': 'বানানী, ঢাকা',
-      'openHours': '9 AM - 9 PM',
-    },
-  ];
+  List<Map<String, dynamic>> _services = [];
+  bool _loading = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadServices();
+  }
+
+  Future<void> _loadServices() async {
+    setState(() => _loading = true);
+    try {
+      final items = await SupabaseRepository.fetchServices();
+      final mapped = items.map((e) => {
+            'id': e['id'],
+            'name': e['name'],
+            'type': e['type'],
+            'distance': e['distance'],
+            'rating': e['rating'],
+            'isOpen': e['is_open'] ?? true,
+            'color': e['color'],
+            'icon': e['icon'],
+            'phone': e['phone'],
+            'address': e['address'],
+            'openHours': e['open_hours'],
+          }).toList();
+      setState(() => _services = mapped);
+    } catch (_) {
+      // ignore errors for now
+    }
+    setState(() => _loading = false);
+  }
 
   String _searchQuery = '';
 
@@ -157,8 +104,10 @@ class _NearbyServicesScreenState extends State<NearbyServicesScreen> {
 
           // Services List or Empty State
           Expanded(
-            child: filteredServices.isNotEmpty
-                ? ListView.builder(
+            child: _loading
+                ? const Center(child: CircularProgressIndicator())
+                : filteredServices.isNotEmpty
+                    ? ListView.builder(
                     padding: const EdgeInsets.symmetric(
                         horizontal: AppDimensions.paddingMedium),
                     itemCount: filteredServices.length,
@@ -246,28 +195,28 @@ class _NearbyServicesScreenState extends State<NearbyServicesScreen> {
         ),
         actions: [
           TextButton(onPressed: () => Navigator.pop(context), child: const Text('বাতিল')),
-          ElevatedButton(
-              onPressed: () {
-                if (nameController.text.isNotEmpty &&
-                    typeController.text.isNotEmpty) {
-                  setState(() {
-                    _services.add({
-                      'name': nameController.text,
-                      'type': typeController.text,
-                      'distance': distanceController.text.isNotEmpty ? distanceController.text : '0 km',
-                      'rating': 0.0,
-                      'isOpen': true,
-                      'color': Colors.blueGrey,
-                      'icon': Icons.local_hospital,
-                      'phone': phoneController.text,
-                      'address': addressController.text,
-                      'openHours': openHoursController.text.isNotEmpty ? openHoursController.text : '24/7',
-                    });
-                  });
-                  Navigator.pop(context);
-                }
-              },
-              child: const Text('সংরক্ষণ')),
+              ElevatedButton(
+                  onPressed: () async {
+                    if (nameController.text.isNotEmpty && typeController.text.isNotEmpty) {
+                      final payload = {
+                        'name': nameController.text,
+                        'type': typeController.text,
+                        'distance': distanceController.text.isNotEmpty ? distanceController.text : '0 km',
+                        'rating': 0.0,
+                        'is_open': true,
+                        'color': '#FF607D8B',
+                        'phone': phoneController.text,
+                        'address': addressController.text,
+                        'open_hours': openHoursController.text.isNotEmpty ? openHoursController.text : '24/7',
+                      };
+                      try {
+                        await SupabaseRepository.addService(payload);
+                        await _loadServices();
+                      } catch (_) {}
+                      Navigator.pop(context);
+                    }
+                  },
+                  child: const Text('সংরক্ষণ')),
         ],
       ),
     );
@@ -280,7 +229,20 @@ class _ServiceCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final color = service['color'] as Color;
+    Color _parseColor(dynamic v) {
+      if (v is int) return Color(v);
+      if (v is String) {
+        final s = v.replaceFirst('#', '');
+        try {
+          return Color(int.parse('0x$s'));
+        } catch (_) {
+          // fallthrough
+        }
+      }
+      return Colors.blue;
+    }
+
+    final color = _parseColor(service['color']);
 
     return Container(
       margin: const EdgeInsets.only(bottom: 16),
@@ -301,7 +263,7 @@ class _ServiceCard extends StatelessWidget {
               Container(
                 padding: const EdgeInsets.all(14),
                 decoration: BoxDecoration(color: color.withOpacity(0.15), shape: BoxShape.circle),
-                child: Icon(service['icon'], color: color, size: 28),
+                child: Icon(service['icon'] is IconData ? service['icon'] : Icons.local_hospital, color: color, size: 28),
               ),
               const SizedBox(width: 16),
               Expanded(

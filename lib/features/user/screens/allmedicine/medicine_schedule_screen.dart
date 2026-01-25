@@ -5,6 +5,7 @@ import 'package:flutter/services.dart';
 
 import '../../../../../core/constants/app_dimensions.dart';
 import '../../widgets/empty_state_widget.dart';
+import '../../../../backend/supabase/repository.dart';
 
 /// ===============================
 /// MEDICINE SCHEDULE SCREEN
@@ -17,40 +18,39 @@ class MedicineScheduleScreen extends StatefulWidget {
 }
 
 class _MedicineScheduleScreenState extends State<MedicineScheduleScreen> {
-  final List<Map<String, dynamic>> _schedules = [
-    {
-      'medicine': 'Napa 500mg',
-      'dosage': '১ ট্যাবলেট',
-      'time': const TimeOfDay(hour: 8, minute: 0),
-      'frequency': 'প্রতিদিন',
-      'color': Colors.blue,
-      'taken': true,
-    },
-    {
-      'medicine': 'Vitamin C 500mg',
-      'dosage': '১ ট্যাবলেট',
-      'time': const TimeOfDay(hour: 9, minute: 0),
-      'frequency': 'প্রতিদিন',
-      'color': Colors.orange,
-      'taken': false,
-    },
-    {
-      'medicine': 'Ace 100mg',
-      'dosage': '১ ট্যাবলেট',
-      'time': const TimeOfDay(hour: 13, minute: 30),
-      'frequency': 'প্রতিদিন',
-      'color': Colors.teal,
-      'taken': false,
-    },
-    {
-      'medicine': 'Losectil 20mg',
-      'dosage': '১ ক্যাপসুল',
-      'time': const TimeOfDay(hour: 20, minute: 0),
-      'frequency': 'রাতে খাবারের পর',
-      'color': Colors.purple,
-      'taken': false,
-    },
-  ];
+  List<Map<String, dynamic>> _schedules = [];
+  bool _loading = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadMedicines();
+  }
+
+  Future<void> _loadMedicines() async {
+    setState(() => _loading = true);
+    try {
+      final items = await SupabaseRepository.fetchMedicines();
+      // transform DB items to local representation
+      final mapped = items.map((e) {
+        String timeStr = e['time'] ?? '08:00';
+        final parts = timeStr.split(':');
+        final hour = int.tryParse(parts[0]) ?? 8;
+        final minute = int.tryParse(parts.length > 1 ? parts[1] : '0') ?? 0;
+        return {
+          'id': e['id'],
+          'medicine': e['medicine'],
+          'dosage': e['dosage'],
+          'time': TimeOfDay(hour: hour, minute: minute),
+          'frequency': e['frequency'] ?? '',
+          'color': e['color'] ?? '#FF2196F3',
+          'taken': e['taken'] ?? false,
+        };
+      }).toList();
+      setState(() => _schedules = mapped);
+    } catch (_) {}
+    setState(() => _loading = false);
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -98,22 +98,24 @@ class _MedicineScheduleScreenState extends State<MedicineScheduleScreen> {
 
           /// Medicine List
           Expanded(
-            child: _schedules.isNotEmpty
-                ? ListView(
-                    padding: const EdgeInsets.symmetric(
-                        horizontal: AppDimensions.paddingMedium),
-                    children: _buildGroupedSchedules(context),
-                  )
-                : const EmptyStateWidget(
-                    icon: Icons.medical_services_outlined,
-                    title: 'কোনো ঔষধ নেই',
-                    subtitle: 'নতুন ঔষধ যোগ করুন',
-                  ),
+            child: _loading
+                ? const Center(child: CircularProgressIndicator())
+                : _schedules.isNotEmpty
+                    ? ListView(
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: AppDimensions.paddingMedium),
+                        children: _buildGroupedSchedules(context),
+                      )
+                    : const EmptyStateWidget(
+                        icon: Icons.medical_services_outlined,
+                        title: 'কোনো ঔষধ নেই',
+                        subtitle: 'নতুন ঔষধ যোগ করুন',
+                      ),
           ),
         ],
       ),
 
-      floatingActionButton: FloatingActionButton.extended(
+          floatingActionButton: FloatingActionButton.extended(
         heroTag: 'add_medicine',
         icon: const Icon(Icons.add),
         label: const Text('নতুন ঔষধ'),
@@ -123,11 +125,26 @@ class _MedicineScheduleScreenState extends State<MedicineScheduleScreen> {
             builder: (_) => const AddMedicineDialog(),
           );
 
-          if (result != null) {
-            setState(() {
-              _schedules.add(result);
-            });
-          }
+              if (result != null) {
+                // convert to DB payload
+                final time = result['time'] as TimeOfDay;
+                final hh = time.hour.toString().padLeft(2, '0');
+                final mm = time.minute.toString().padLeft(2, '0');
+                final color = result['color'] as Color;
+                final colorHex = '#${color.value.toRadixString(16).padLeft(8, '0').toUpperCase()}';
+                final payload = {
+                  'medicine': result['medicine'],
+                  'dosage': result['dosage'],
+                  'frequency': result['frequency'],
+                  'time': '$hh:$mm',
+                  'color': colorHex,
+                  'taken': result['taken'] ?? false,
+                };
+                try {
+                  await SupabaseRepository.addMedicine(payload);
+                  await _loadMedicines();
+                } catch (_) {}
+              }
         },
       ),
     );
@@ -165,10 +182,13 @@ class _MedicineScheduleScreenState extends State<MedicineScheduleScreen> {
                     data: item,
                     onToggle: () {
                       HapticFeedback.selectionClick();
-                      setState(() {
-                        _schedules[index]['taken'] =
-                            !_schedules[index]['taken'];
-                      });
+                      final newVal = !_schedules[index]['taken'];
+                      setState(() => _schedules[index]['taken'] = newVal);
+                      // persist
+                      final id = _schedules[index]['id'];
+                      if (id != null) {
+                        SupabaseRepository.updateMedicineTaken(id, newVal).catchError((_) {});
+                      }
                     },
                   );
                 }),
@@ -223,7 +243,18 @@ class MedicineCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final taken = data['taken'] as bool;
-    final color = data['color'] as Color;
+    Color _parseColor(dynamic v) {
+      if (v is int) return Color(v);
+      if (v is String) {
+        final s = v.replaceFirst('#', '');
+        try {
+          return Color(int.parse('0x$s'));
+        } catch (_) {}
+      }
+      return Colors.blue;
+    }
+
+    final color = _parseColor(data['color']);
 
     return Opacity(
       opacity: taken ? 0.55 : 1,
